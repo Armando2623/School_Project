@@ -6,7 +6,7 @@ export default defineConfig({
     proxy: {
       // Proxea las llamadas al MVC principal (evita CORS en dev)
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'https://school-project-1mso.onrender.com',
         changeOrigin: true,
       },
       // Proxea las llamadas al microservicio de asistencia
