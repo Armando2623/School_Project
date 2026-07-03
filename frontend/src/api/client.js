@@ -4,7 +4,7 @@ import { store } from '../auth/store.js';
 import { store } from '../auth/store.js';
 
 // Reemplaza 'schoolguard-mvc.onrender.com' por la URL real de tu backend en Re nder
-const BACKEND_URL = 'https://schoolguard-mvc.onrender.com';
+const BACKEND_URL = 'https://school-project-1mso.onrender.com';
 
 const BASE     = `${BACKEND_URL}/api`;
 const BASE_AST = `${BACKEND_URL}/asistencia-api`;
