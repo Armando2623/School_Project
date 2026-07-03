@@ -54,3 +54,13 @@ export const agendaApi = {
   put:    (path, body) => request(BASE_AGENDA, path, { method: 'PUT',    body: JSON.stringify(body) }),
   delete: (path)       => request(BASE_AGENDA, path, { method: 'DELETE' }),
 };
+import { store } from '../auth/store.js';
+
+// Reemplaza 'schoolguard-mvc.onrender.com' por la URL real de tu backend en Render
+const BACKEND_URL = 'https://schoolguard-mvc.onrender.com';
+
+const BASE     = `${BACKEND_URL}/api`;
+const BASE_AST = `${BACKEND_URL}/asistencia-api`;
+const BASE_AGENDA = `${BACKEND_URL}/agenda-api`;
+
+// ... El resto del código de la función request y los exports se quedan exactamente igual
