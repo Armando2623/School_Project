@@ -44,11 +44,11 @@ public class AuthController {
 
         String token = jwtUtil.generateToken(usuario.getUsuario(), usuario.getRol().name());
 
+        // --- AGREGA ESTA PARTE PARA ENVIAR LA RESPUESTA CORRECTA ---
         return ResponseEntity.ok(Map.of(
                 "token", token,
-                "id", usuario.getId(),
-                "nombre", usuario.getNombre(),
                 "usuario", usuario.getUsuario(),
-                "rol", usuario.getRol().name()));
-    }
+                "rol", usuario.getRol().name()
+        ));
+    } // No olvides cerrar la llave del método
 }
