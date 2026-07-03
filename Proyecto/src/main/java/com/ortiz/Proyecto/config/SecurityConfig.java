@@ -1,0 +1,121 @@
+package com.ortiz.Proyecto.config;
+
+import com.ortiz.Proyecto.security.JwtAuthenticationFilter;
+import com.ortiz.Proyecto.security.UserDetailsServiceImpl;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    @Autowired
+    private JwtAuthenticationFilter jwtFilter;
+
+    @Autowired
+    private UserDetailsServiceImpl userDetailsService;
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsSource()))
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+
+                        // ─── Rutas públicas ───────────────────────────────────
+                        .requestMatchers("/api/auth/**").permitAll()
+
+                        // ─── Gestión de usuarios: solo ADMINISTRADOR ──────────
+                        .requestMatchers("/api/usuarios/**").hasRole("ADMINISTRADOR")
+                        .requestMatchers("/api/auditoria", "/api/auditoria/**").hasRole("ADMINISTRADOR")
+
+                        // ─── Visitantes y Alumnos: ADMINISTRADOR + SECRETARIA ─
+                        .requestMatchers(HttpMethod.GET, "/api/visitantes/**").hasAnyRole("ADMINISTRADOR", "SECRETARIA")
+                        .requestMatchers(HttpMethod.POST, "/api/visitantes/**")
+                        .hasAnyRole("ADMINISTRADOR", "SECRETARIA")
+                        .requestMatchers(HttpMethod.PUT, "/api/visitantes/**").hasAnyRole("ADMINISTRADOR", "SECRETARIA")
+                        .requestMatchers(HttpMethod.DELETE, "/api/visitantes/**").hasRole("ADMINISTRADOR")
+
+                        .requestMatchers(HttpMethod.GET, "/api/alumnos/**")
+                        .hasAnyRole("ADMINISTRADOR", "SECRETARIA", "PROFESOR", "PORTERO")
+                        .requestMatchers(HttpMethod.POST, "/api/alumnos/**").hasAnyRole("ADMINISTRADOR", "SECRETARIA")
+                        .requestMatchers(HttpMethod.PUT, "/api/alumnos/**").hasAnyRole("ADMINISTRADOR", "SECRETARIA")
+                        .requestMatchers(HttpMethod.DELETE, "/api/alumnos/**").hasRole("ADMINISTRADOR")
+
+                        // ─── Registro de visitas ──────────────────────────────
+                        .requestMatchers(HttpMethod.GET, "/api/visitas/**").hasAnyRole(
+                                "ADMINISTRADOR", "PORTERO", "SECRETARIA", "DIRECTOR", "PROFESOR")
+                        .requestMatchers(HttpMethod.POST, "/api/visitas/**").hasAnyRole(
+                                "ADMINISTRADOR", "PORTERO", "SECRETARIA")
+                        .requestMatchers(HttpMethod.PUT, "/api/visitas/**").hasAnyRole(
+                                "ADMINISTRADOR", "PORTERO", "SECRETARIA")
+
+                        // ─── Swagger y OpenAPI: público ──────────────────────────────────────────
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/webjars/**"
+                        ).permitAll()
+
+                        // ─── Cualquier otra ruta autenticada (todos los roles) ─
+                        .anyRequest().hasAnyRole(
+                                "ADMINISTRADOR", "PORTERO", "SECRETARIA", "DIRECTOR", "PROFESOR"))
+                .exceptionHandling(ex -> ex
+                        // Devuelve 401 cuando no hay token o es inválido (en vez de 403)
+                        .authenticationEntryPoint((req, res, e) -> res.sendError(401, "No autenticado"))
+                )
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService);
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOriginPatterns(List.of("*"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
+}
