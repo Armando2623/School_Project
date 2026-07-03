@@ -17,7 +17,7 @@
 	<description>Microservicio SOA — Agenda y Horarios de Profesores (SchoolGuard)</description>
 
 	<properties>
-		<java.version>17</java.version>
+		<java.version>21</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
@@ -101,6 +101,16 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+
+			<!-- Encoding explicito UTF-8 para evitar MalformedInputException en Docker/Render -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<configuration>
+					<encoding>UTF-8</encoding>
+					<propertiesEncoding>UTF-8</propertiesEncoding>
+				</configuration>
 			</plugin>
 
 			<plugin>
