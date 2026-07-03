@@ -4,8 +4,8 @@ WORKDIR /app
 COPY . .
 RUN mvn clean package -DskipTests
 
-# Fase 2: Ejecución
-FROM eclipse-temurin-17-jre
+# Fase 2: Ejecución (Línea corregida)
+FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 COPY --from=build /app/target/Proyecto-0.0.1.jar app.jar
 EXPOSE 8080
