@@ -1,5 +1,5 @@
 # Fase 1: Compilación
-FROM maven:3.8.8-eclipse-temurin-217 AS build
+FROM maven:3.8.8-eclipse-temurin-21 AS build
 WORKDIR /app
 COPY . .
 RUN mvn clean package -DskipTests -Dmaven.resources.filtering=false
