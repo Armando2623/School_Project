@@ -1,16 +1,9 @@
 import { store } from '../auth/store.js';
 
-
-import { store } from '../auth/store.js';
-
-// Reemplaza 'schoolguard-mvc.onrender.com' por la URL real de tu backend en Re nder
-const BACKEND_URL = 'https://school-project-1mso.onrender.com';
-
-const BASE     = `${BACKEND_URL}/api`;
-const BASE_AST = `${BACKEND_URL}/asistencia-api`;
-const BASE_AGENDA = `${BACKEND_URL}/agenda-api`;
-
-// ... El resto del código de la función request y los exports se quedan exactamente igual
+const BACKEND_URL  = 'https://school-project-1mso.onrender.com';
+const BASE         = `${BACKEND_URL}/api`;
+const BASE_AST     = `${BACKEND_URL}/asistencia-api`;
+const BASE_AGENDA  = `${BACKEND_URL}/agenda-api`;
 
 async function request(base, path, options = {}) {
   const token = store.token();
@@ -33,6 +26,7 @@ async function request(base, path, options = {}) {
   return res.json();
 }
 
+/** Cliente para el MVC principal (puerto 8080 / Render MVC URL) */
 export const api = {
   get:       (path)         => request(BASE, path),
   post:      (path, body)   => request(BASE, path, { method: 'POST',   body: JSON.stringify(body) }),
@@ -50,13 +44,13 @@ export const api = {
   },
 };
 
+/** Cliente para el microservicio de asistencia (puerto 8081) */
 export const astApi = {
   get:  (path)       => request(BASE_AST, path),
   post: (path, body) => request(BASE_AST, path, { method: 'POST', body: JSON.stringify(body) }),
 };
 
-const BASE_AGENDA = '/agenda-api';
-
+/** Cliente para el microservicio de agenda (puerto 8082) */
 export const agendaApi = {
   get:    (path)       => request(BASE_AGENDA, path),
   post:   (path, body) => request(BASE_AGENDA, path, { method: 'POST',   body: JSON.stringify(body) }),
