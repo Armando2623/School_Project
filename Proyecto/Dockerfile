@@ -2,9 +2,9 @@
 FROM maven:3.8.8-eclipse-temurin-17 AS build
 WORKDIR /app
 COPY . .
-RUN mvn clean package -DskipTests
+RUN mvn clean package -DskipTests -Dmaven.resources.filtering=false
 
-# Fase 2: Ejecución (Línea corregida)
+# Fase 2: Ejecución
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 COPY --from=build /app/target/Proyecto-0.0.1.jar app.jar
