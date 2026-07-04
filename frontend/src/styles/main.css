@@ -1,5 +1,5 @@
-/* =============================================
-   SchoolGuard — Design System (Screenshot Style)
+﻿/* =============================================
+   SchoolGuard â€” Design System
    ============================================= */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
@@ -8,6 +8,7 @@
   --sidebar-hover: rgba(255,255,255,.06);
   --sidebar-active:#2563eb;
   --sidebar-w:     220px;
+  --topbar-h:      56px;   /* altura del topbar mÃ³vil */
   --bg:            #f0f2f5;
   --surface:       #ffffff;
   --border:        #e4e8ef;
@@ -40,7 +41,7 @@ body {
 a { text-decoration: none; color: inherit; }
 button { font-family: inherit; cursor: pointer; }
 
-/* ── App shell ── */
+/* â”€â”€ App shell â”€â”€ */
 #app { display: flex; min-height: 100vh; }
 .app-container { display: flex; width: 100%; min-height: 100vh; }
 
@@ -392,7 +393,7 @@ select.form-control option { background: #fff; }
 @keyframes toastOut { from { opacity: 1 } to { transform: translateX(110%); opacity: 0 } }
 
 /* =============================================
-   LOGIN PAGE — Light clean style
+   LOGIN PAGE â€” Light clean style
    ============================================= */
 .login-wrapper {
   min-height: 100vh; width: 100%;
@@ -533,18 +534,169 @@ select.form-control option { background: #fff; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
 /* =============================================
-   RESPONSIVE
+   RESPONSIVE â€” Mobile first
    ============================================= */
-@media (max-width: 768px) {
-  .sidebar { transform: translateX(-100%); transition: transform .3s ease; }
-  .sidebar.open { transform: translateX(0); }
-  .main-content { margin-left: 0; }
-  .page-body { padding: 16px; }
-  .stats-row { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  .form-grid { grid-template-columns: 1fr; }
+
+/* â”€â”€ Hamburger button (visible only on mobile) â”€â”€ */
+.sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 12px; left: 14px;
+  z-index: 300;
+  width: 36px; height: 36px;
+  border-radius: var(--radius);
+  background: var(--primary);
+  border: none;
+  color: #fff;
+  font-size: 16px;
+  align-items: center; justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(37,99,235,.4);
+  transition: background var(--transition);
+}
+.sidebar-toggle:hover { background: var(--primary-dark); }
+
+/* â”€â”€ Overlay that closes sidebar on mobile â”€â”€ */
+.sidebar-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(15,23,42,.45);
+  backdrop-filter: blur(2px);
+  z-index: 150;
+}
+.sidebar-overlay.active { display: block; }
+
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   TABLET  â‰¤ 1024px
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+@media (max-width: 1024px) {
+  :root { --sidebar-w: 200px; }
+
+  .page-body { padding: 20px; }
+  .page-topbar { padding: 14px 20px; }
+
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+
+  .search-box input { width: 160px; }
 }
 
-/* Scrollbar */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   MOBILE  â‰¤ 768px
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+@media (max-width: 768px) {
+
+  /* Sidebar: slide out off-screen by default */
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform .28s cubic-bezier(.4,0,.2,1);
+    z-index: 200;
+    width: var(--sidebar-w);
+  }
+  .sidebar.open { transform: translateX(0); }
+
+  /* Hamburger visible */
+  .sidebar-toggle { display: inline-flex; }
+
+  /* Main content fills full width */
+  .main-content {
+    margin-left: 0;
+    padding-top: var(--topbar-h); /* space for fixed hamburger row */
+  }
+
+  /* Topbar: smaller padding, title truncated */
+  .page-topbar {
+    padding: 12px 16px 12px 60px; /* 60px left = space for hamburger */
+    position: sticky; top: 0;
+  }
+  .page-topbar h1  { font-size: 15px; }
+  .page-topbar .sub { display: none; }
+  .date-pill { display: none; }
+
+  /* Body padding */
+  .page-body { padding: 14px; }
+
+  /* Stats: 2 columns on phone */
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .stat-card { padding: 14px; gap: 10px; }
+  .stat-icon-box { width: 42px; height: 42px; font-size: 18px; }
+  .stat-num { font-size: 22px; }
+
+  /* Table: full horizontal scroll */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .table-controls { width: 100%; }
+  .search-box { width: 100%; }
+  .search-box input { width: 100%; min-width: 0; }
+  thead th, tbody td { padding: 10px 12px; font-size: 12px; }
+  .table-card-footer { padding: 10px 14px; }
+
+  /* Action bar */
+  .action-bar { gap: 8px; }
+  .action-bar .btn { font-size: 12px; padding: 7px 12px; }
+
+  /* Forms */
+  .form-grid { grid-template-columns: 1fr; gap: 12px; }
+
+  /* Modal: full width on small screens */
+  .modal-overlay { padding: 10px; align-items: flex-end; }
+  .modal-box {
+    max-width: 100%;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    max-height: 85vh;
+    animation: slideUpMobile .28s ease;
+  }
+  @keyframes slideUpMobile {
+    from { transform: translateY(40px); opacity: 0 }
+    to   { transform: translateY(0);   opacity: 1 }
+  }
+  .modal-header { padding: 14px 16px 12px; }
+  .modal-body   { padding: 14px 16px; }
+  .modal-footer { padding: 12px 16px; }
+
+  /* Toast: full width bottom */
+  #toast-container {
+    bottom: 12px; right: 12px; left: 12px;
+  }
+  .toast { min-width: 0; max-width: 100%; }
+
+  /* Badges: slightly smaller */
+  .badge { font-size: 10px; padding: 2px 8px; }
+
+  /* Buttons: better touch target */
+  .btn    { padding: 9px 14px; }
+  .btn-sm { padding: 6px 10px; }
+
+  /* Service chips: wrap nicely */
+  .svc-row { gap: 6px; }
+  .svc-chip { font-size: 11px; padding: 4px 10px; }
+
+  /* Page header */
+  .page-header { flex-direction: column; align-items: flex-start; }
+}
+
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   SMALL PHONE  â‰¤ 400px
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+@media (max-width: 400px) {
+  .stats-row { grid-template-columns: 1fr; }
+  .stat-card { padding: 12px; }
+  .page-body { padding: 10px; }
+}
+
+/* â”€â”€ Scrollbar â”€â”€ */
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
