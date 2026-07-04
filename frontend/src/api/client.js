@@ -1,9 +1,13 @@
 import { store } from '../auth/store.js';
 
-const BACKEND_URL  = 'https://school-project-1mso.onrender.com';
-const BASE         = `${BACKEND_URL}/api`;
-const BASE_AST     = `${BACKEND_URL}/asistencia-api`;
-const BASE_AGENDA  = `${BACKEND_URL}/agenda-api`;
+// ── URLs de los servicios en Render (producción) ──────────────────────────────
+const MVC_URL       = 'https://school-project-1mso.onrender.com';
+const AST_URL       = 'https://school-project-assitencia-service.onrender.com';
+const AGENDA_URL    = 'https://school-project-agendaservice.onrender.com';
+
+const BASE          = `${MVC_URL}/api`;
+const BASE_AST      = `${AST_URL}/api`;
+const BASE_AGENDA   = `${AGENDA_URL}/api`;
 
 async function request(base, path, options = {}) {
   const token = store.token();
@@ -26,14 +30,14 @@ async function request(base, path, options = {}) {
   return res.json();
 }
 
-/** Cliente para el MVC principal (puerto 8080 / Render MVC URL) */
+/** Cliente para el MVC principal → https://school-project-1mso.onrender.com */
 export const api = {
   get:       (path)         => request(BASE, path),
   post:      (path, body)   => request(BASE, path, { method: 'POST',   body: JSON.stringify(body) }),
   put:       (path, body)   => request(BASE, path, { method: 'PUT',    body: JSON.stringify(body) }),
   delete:    (path)         => request(BASE, path, { method: 'DELETE' }),
 
-  /** Descarga un blob (imagen, PDF, etc.) con autenticación JWT */
+  /** Descarga un blob (imagen, PDF) con autenticación JWT */
   fetchBlob: async (path) => {
     const token = store.token();
     const headers = {};
@@ -44,13 +48,13 @@ export const api = {
   },
 };
 
-/** Cliente para el microservicio de asistencia (puerto 8081) */
+/** Cliente para asistencia-service → https://school-project-assitencia-service.onrender.com */
 export const astApi = {
   get:  (path)       => request(BASE_AST, path),
   post: (path, body) => request(BASE_AST, path, { method: 'POST', body: JSON.stringify(body) }),
 };
 
-/** Cliente para el microservicio de agenda (puerto 8082) */
+/** Cliente para agenda-service → https://school-project-agendaservice.onrender.com */
 export const agendaApi = {
   get:    (path)       => request(BASE_AGENDA, path),
   post:   (path, body) => request(BASE_AGENDA, path, { method: 'POST',   body: JSON.stringify(body) }),
