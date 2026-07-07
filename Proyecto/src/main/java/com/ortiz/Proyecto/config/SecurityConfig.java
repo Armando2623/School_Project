@@ -39,6 +39,35 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsSource()))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                // ─── Content-Security-Policy y demás security headers ──────────────────────
+                .headers(headers -> headers
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(
+                                // Sólo recursos propios por defecto
+                                "default-src 'self'; " +
+                                // Scripts: self + inline necesario para Swagger UI
+                                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+                                // Estilos: self + inline para Swagger
+                                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                                // Fuentes
+                                "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; " +
+                                // Imágenes: self + data URIs (para QR en base64)
+                                "img-src 'self' data:; " +
+                                // Conexiones: self + backends desplegados
+                                "connect-src 'self' https://school-project-1mso.onrender.com; " +
+                                // Prohíbe objetos embebidos (Flash, plugins)
+                                "object-src 'none'; " +
+                                // Restringe base href
+                                "base-uri 'self'; " +
+                                // Restringe formularios
+                                "form-action 'self'"
+                        ))
+                        // Protección contra clickjacking
+                        .frameOptions(frame -> frame.deny())
+                        // Fuerza MIME-type declarado
+                        .contentTypeOptions(ct -> {})
+                )
+
                 .authorizeHttpRequests(auth -> auth
 
                         // ─── Rutas públicas ───────────────────────────────────
@@ -110,9 +139,15 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of("*"));
+        // ─── Orígenes permitidos: frontend local (dev) + Render (prod) ────────────
+        config.setAllowedOriginPatterns(List.of(
+                "http://localhost:[*]",
+                "https://school-project-1mso.onrender.com"
+        ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
+        // Sólo los headers que realmente se usan
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+        config.setExposedHeaders(List.of("Authorization"));
         config.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

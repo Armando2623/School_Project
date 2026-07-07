@@ -35,6 +35,24 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsSource()))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                // ─── Content-Security-Policy y demás security headers ──────────────────────
+                .headers(headers -> headers
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(
+                                "default-src 'self'; " +
+                                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+                                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                                "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; " +
+                                "img-src 'self' data:; " +
+                                "connect-src 'self' https://school-project-1mso.onrender.com; " +
+                                "object-src 'none'; " +
+                                "base-uri 'self'; " +
+                                "form-action 'self'"
+                        ))
+                        .frameOptions(frame -> frame.deny())
+                        .contentTypeOptions(ct -> {})
+                )
+
                 .authorizeHttpRequests(auth -> auth
 
                         // ─── Registrar asistencia personal: PORTERO, SECRETARIA, ADMINISTRADOR ──
@@ -57,7 +75,7 @@ public class SecurityConfig {
                                 "/webjars/**"
                         ).permitAll()
 
-                        // ─── Cualquier otra petición requiere autenticación ────────────
+                        // ─── Cualquier otra petición requiere autenticación ──────────────────
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
@@ -72,9 +90,15 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of("*"));
+        // ─── Orígenes permitidos: frontend local (dev) + Render (prod) ────────────
+        config.setAllowedOriginPatterns(List.of(
+                "http://localhost:[*]",
+                "https://school-project-1mso.onrender.com"
+        ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
+        // Sólo los headers que realmente se usan
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+        config.setExposedHeaders(List.of("Authorization"));
         config.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

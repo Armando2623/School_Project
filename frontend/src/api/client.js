@@ -1,6 +1,7 @@
 import { store } from '../auth/store.js';
 
 // ── URLs de los servicios en Render (producción) ──────────────────────────────
+const _BUILD_V      = '2';   // incrementar para forzar nuevo hash de bundle
 const MVC_URL       = 'https://school-project-1mso.onrender.com';
 const AST_URL       = 'https://school-project-assitencia-service.onrender.com';
 const AGENDA_URL    = 'https://school-project-agendaservice.onrender.com';

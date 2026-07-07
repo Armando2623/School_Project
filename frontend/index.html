@@ -5,11 +5,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SchoolGuard — Sistema de Gestión Escolar</title>
   <meta name="description" content="Sistema de control de acceso, registro de visitas y asistencia." />
+
+  <!--
+    Content-Security-Policy:
+    - default-src 'self'           → solo recursos propios por defecto
+    - script-src 'self'            → solo scripts locales (Vite los bundlea)
+    - style-src  'self' + CDNs     → permite Font Awesome y Google Fonts
+    - font-src   + CDNs            → permite las fuentes de los CDN
+    - img-src    'self' data:      → permite imágenes locales y QR en base64
+    - connect-src                  → permite llamadas a los 3 backends
+    - object-src 'none'            → prohíbe Flash y plugins
+    - base-uri 'self'              → evita inyección de <base>
+    - form-action 'self'           → el login solo envía al propio servidor
+  -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self';
+    style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com;
+    font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com;
+    img-src 'self' data: blob:;
+    connect-src 'self' https://school-project-1mso.onrender.com http://localhost:8081 http://localhost:8082;
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self'
+  " />
+
+  <!-- Previene clickjacking -->
+  <meta http-equiv="X-Frame-Options" content="DENY" />
+  <!-- Evita filtrar el Referer al navegar a sitios externos -->
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <!-- Enlace a Font Awesome CDN -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <!-- Font Awesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
 </head>
 <body>
