@@ -100,13 +100,13 @@ public class SecurityConfig {
 
                         // ─── Inventario y Logística ───────────────────────────
                         .requestMatchers(HttpMethod.GET, "/api/inventario/**").hasAnyRole(
-                                "ADMINISTRADOR", "PORTERO", "SECRETARIA", "DIRECTOR", "PROFESOR")
+                                "ADMINISTRADOR", "PORTERO", "SECRETARIA", "DIRECTOR", "PROFESOR", "ENCARGADO_INVENTARIO")
                         .requestMatchers(HttpMethod.POST, "/api/inventario/**").hasAnyRole(
-                                "ADMINISTRADOR", "SECRETARIA", "DIRECTOR")
+                                "ADMINISTRADOR", "SECRETARIA", "DIRECTOR", "ENCARGADO_INVENTARIO")
                         .requestMatchers(HttpMethod.PUT, "/api/inventario/**").hasAnyRole(
-                                "ADMINISTRADOR", "SECRETARIA", "DIRECTOR")
+                                "ADMINISTRADOR", "SECRETARIA", "DIRECTOR", "ENCARGADO_INVENTARIO")
                         .requestMatchers(HttpMethod.DELETE, "/api/inventario/**").hasAnyRole(
-                                "ADMINISTRADOR", "SECRETARIA", "DIRECTOR")
+                                "ADMINISTRADOR", "SECRETARIA", "DIRECTOR", "ENCARGADO_INVENTARIO")
 
                         // ─── Swagger y OpenAPI: público ──────────────────────────────────────────
                         .requestMatchers(

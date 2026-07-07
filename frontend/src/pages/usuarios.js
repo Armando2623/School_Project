@@ -2,12 +2,13 @@ import { usuariosApi } from '../api/usuarios.js';
 import { openModal }   from '../components/modal.js';
 import { toast }       from '../components/toast.js';
 
-const ROLES = ['ADMINISTRADOR','PORTERO','SECRETARIA','DIRECTOR','PROFESOR'];
+const ROLES = ['ADMINISTRADOR','PORTERO','SECRETARIA','DIRECTOR','PROFESOR','ENCARGADO_INVENTARIO'];
 const ROL_BADGE = {
   ADMINISTRADOR:'badge-red', PORTERO:'badge-blue',
-  SECRETARIA:'badge-green',  DIRECTOR:'badge-yellow', PROFESOR:'badge-purple'
+  SECRETARIA:'badge-green',  DIRECTOR:'badge-yellow', PROFESOR:'badge-purple',
+  ENCARGADO_INVENTARIO:'badge-orange'
 };
-const rolBadge = r => `<span class="badge ${ROL_BADGE[r]??'badge-gray'}">${r}</span>`;
+const rolBadge = r => `<span class="badge ${ROL_BADGE[r]??'badge-gray'}">${r.replace('_', ' ')}</span>`;
 let all = [];
 
 export async function renderUsuarios(container) {

@@ -4,7 +4,7 @@ const MENU = [
   {
     section: 'PRINCIPAL',
     items: [
-      { icon: 'fas fa-chart-line',    label: 'Dashboard',   hash: '#/dashboard',  roles: null },
+      { icon: 'fas fa-chart-line',    label: 'Dashboard',   hash: '#/dashboard',  roles: ['ADMINISTRADOR','PORTERO','SECRETARIA','DIRECTOR','PROFESOR'] },
       { icon: 'fas fa-clipboard-list', label: 'Visitas',     hash: '#/visitas',    roles: ['ADMINISTRADOR','PORTERO','SECRETARIA','DIRECTOR','PROFESOR'] },
     ]
   },
@@ -15,7 +15,7 @@ const MENU = [
       { icon: 'fas fa-user-graduate', label: 'Alumnos',     hash: '#/alumnos',    roles: ['ADMINISTRADOR','SECRETARIA','PROFESOR'] },
       { icon: 'fas fa-check-square',  label: 'Asistencia',  hash: '#/asistencia', roles: ['ADMINISTRADOR','DIRECTOR','SECRETARIA','PORTERO','PROFESOR'] },
       { icon: 'fas fa-calendar-alt',  label: 'Agenda',      hash: '#/agenda',     roles: ['ADMINISTRADOR','DIRECTOR','SECRETARIA','PORTERO','PROFESOR'] },
-      { icon: 'fas fa-boxes',         label: 'Inventario',  hash: '#/inventario', roles: ['ADMINISTRADOR','DIRECTOR','SECRETARIA','PORTERO','PROFESOR'] },
+      { icon: 'fas fa-boxes',         label: 'Inventario',  hash: '#/inventario', roles: ['ADMINISTRADOR','DIRECTOR','SECRETARIA','PORTERO','PROFESOR','ENCARGADO_INVENTARIO'] },
       { icon: 'fas fa-user-cog',      label: 'Usuarios',    hash: '#/usuarios',   roles: ['ADMINISTRADOR'] },
       { icon: 'fas fa-history',       label: 'Auditoría',   hash: '#/auditoria',  roles: ['ADMINISTRADOR'] },
     ]
@@ -25,6 +25,7 @@ const MENU = [
 const ROL_LABELS = {
   ADMINISTRADOR: 'Administrador', PORTERO: 'Portero',
   SECRETARIA: 'Secretaria', DIRECTOR: 'Director', PROFESOR: 'Profesor',
+  ENCARGADO_INVENTARIO: 'Encargado de Inventario',
 };
 
 export function renderSidebar(container) {

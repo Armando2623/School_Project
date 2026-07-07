@@ -90,7 +90,11 @@ export function renderLogin(container) {
     try {
       const data = await authApi.login(usuario, contraseña);
       store.save(data);
-      window.location.hash = '#/dashboard';
+      if (data.rol === 'ENCARGADO_INVENTARIO') {
+        window.location.hash = '#/inventario';
+      } else {
+        window.location.hash = '#/dashboard';
+      }
     } catch (err) {
       errMsg.textContent = err.message || 'Credenciales inválidas';
       errBox.classList.add('show');

@@ -29,13 +29,35 @@ const ROUTES = {
 };
 
 async function navigate() {
-  const hash  = window.location.hash || '#/dashboard';
+  let hash = window.location.hash || '#/dashboard';
+
+  // Redireccionar al inventario si el rol es ENCARGADO_INVENTARIO y va al home/dashboard
+  if (store.isLogged() && store.rol() === 'ENCARGADO_INVENTARIO' && (hash === '#/dashboard' || hash === '#/')) {
+    hash = '#/inventario';
+    window.location.hash = '#/inventario';
+    return;
+  }
+
   const route = ROUTES[hash];
 
-  if (!route) { window.location.hash = '#/dashboard'; return; }
+  if (!route) {
+    if (store.isLogged() && store.rol() === 'ENCARGADO_INVENTARIO') {
+      window.location.hash = '#/inventario';
+    } else {
+      window.location.hash = '#/dashboard';
+    }
+    return;
+  }
 
   if (!route.auth) {
-    if (store.isLogged()) { window.location.hash = '#/dashboard'; return; }
+    if (store.isLogged()) {
+      if (store.rol() === 'ENCARGADO_INVENTARIO') {
+        window.location.hash = '#/inventario';
+      } else {
+        window.location.hash = '#/dashboard';
+      }
+      return;
+    }
     app.innerHTML = '';
     route.page(app);
     return;
