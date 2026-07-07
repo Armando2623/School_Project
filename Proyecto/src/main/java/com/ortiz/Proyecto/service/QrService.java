@@ -60,7 +60,7 @@ public class QrService {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             MatrixToImageWriter.writeToStream(matrix, "PNG", baos);
             return baos.toByteArray();
-        } catch (WriterException | IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException("Error generando código de barras: " + e.getMessage(), e);
         }
     }
