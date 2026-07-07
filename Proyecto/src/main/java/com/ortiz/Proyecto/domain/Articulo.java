@@ -37,7 +37,7 @@ public class Articulo {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Area area;
 
-    @OneToMany(mappedBy = "articulo", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "articulo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JsonIgnoreProperties("articulo")
     private List<ArticuloFoto> fotos = new ArrayList<>();
 
