@@ -2,6 +2,7 @@ import { visitasApi }    from '../api/visitas.js';
 import { alumnosApi }    from '../api/alumnos.js';
 import { asistenciaApi } from '../api/asistencia.js';
 import { store }         from '../auth/store.js';
+import { MVC_URL, AST_URL } from '../api/client.js';
 
 const today = () => new Date().toLocaleDateString('es-PE', {
   weekday:'long', year:'numeric', month:'long', day:'numeric'
@@ -88,8 +89,8 @@ export async function renderDashboard(container) {
       dot.classList.add(r.status < 500 ? 'online' : 'offline');
     } catch { dot.classList.add('offline'); }
   };
-  ping('/api/alumnos', 'dot-mvc', authHeaders);
-  ping('/asistencia-api/asistencia', 'dot-ast', authHeaders);
+  ping(`${MVC_URL}/api/alumnos`, 'dot-mvc', authHeaders);
+  ping(`${AST_URL}/api/asistencia`, 'dot-ast', authHeaders);
 
   // Stats + tabla
   try {

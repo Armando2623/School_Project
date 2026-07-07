@@ -14,7 +14,7 @@ export default defineConfig({
         "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com",
         "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com",
         "img-src 'self' data: blob:",
-        "connect-src 'self' https://school-project-1mso.onrender.com http://localhost:8081 http://localhost:8082",
+        "connect-src 'self' https://school-project-1mso.onrender.com https://school-project-assitencia-service.onrender.com https://school-project-agendaservice.onrender.com http://localhost:8081 http://localhost:8082",
         "object-src 'none'",
         "base-uri 'self'",
         "form-action 'self'",
