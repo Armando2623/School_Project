@@ -98,6 +98,16 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/visitas/**").hasAnyRole(
                                 "ADMINISTRADOR", "PORTERO", "SECRETARIA")
 
+                        // ─── Inventario y Logística ───────────────────────────
+                        .requestMatchers(HttpMethod.GET, "/api/inventario/**").hasAnyRole(
+                                "ADMINISTRADOR", "PORTERO", "SECRETARIA", "DIRECTOR", "PROFESOR")
+                        .requestMatchers(HttpMethod.POST, "/api/inventario/**").hasAnyRole(
+                                "ADMINISTRADOR", "SECRETARIA", "DIRECTOR")
+                        .requestMatchers(HttpMethod.PUT, "/api/inventario/**").hasAnyRole(
+                                "ADMINISTRADOR", "SECRETARIA", "DIRECTOR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/inventario/**").hasAnyRole(
+                                "ADMINISTRADOR", "SECRETARIA", "DIRECTOR")
+
                         // ─── Swagger y OpenAPI: público ──────────────────────────────────────────
                         .requestMatchers(
                                 "/v3/api-docs/**",

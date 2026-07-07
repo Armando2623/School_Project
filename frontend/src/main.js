@@ -11,6 +11,7 @@ import { renderUsuarios }   from './pages/usuarios.js';
 import { renderAsistencia } from './pages/asistencia.js';
 import { renderAgenda }     from './pages/agenda.js';
 import { renderAuditoria }  from './pages/auditoria.js';
+import { renderInventario } from './pages/inventario.js';
 
 const app = document.getElementById('app');
 
@@ -24,6 +25,7 @@ const ROUTES = {
   '#/auditoria':  { page: renderAuditoria,  auth: true, roles: ['ADMINISTRADOR'] },
   '#/asistencia': { page: renderAsistencia, auth: true  },
   '#/agenda':     { page: renderAgenda,     auth: true  },
+  '#/inventario': { page: renderInventario, auth: true  },
 };
 
 async function navigate() {

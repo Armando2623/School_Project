@@ -15,6 +15,7 @@ const MENU = [
       { icon: 'fas fa-user-graduate', label: 'Alumnos',     hash: '#/alumnos',    roles: ['ADMINISTRADOR','SECRETARIA','PROFESOR'] },
       { icon: 'fas fa-check-square',  label: 'Asistencia',  hash: '#/asistencia', roles: ['ADMINISTRADOR','DIRECTOR','SECRETARIA','PORTERO','PROFESOR'] },
       { icon: 'fas fa-calendar-alt',  label: 'Agenda',      hash: '#/agenda',     roles: ['ADMINISTRADOR','DIRECTOR','SECRETARIA','PORTERO','PROFESOR'] },
+      { icon: 'fas fa-boxes',         label: 'Inventario',  hash: '#/inventario', roles: ['ADMINISTRADOR','DIRECTOR','SECRETARIA','PORTERO','PROFESOR'] },
       { icon: 'fas fa-user-cog',      label: 'Usuarios',    hash: '#/usuarios',   roles: ['ADMINISTRADOR'] },
       { icon: 'fas fa-history',       label: 'Auditoría',   hash: '#/auditoria',  roles: ['ADMINISTRADOR'] },
     ]
