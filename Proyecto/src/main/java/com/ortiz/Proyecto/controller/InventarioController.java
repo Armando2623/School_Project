@@ -12,12 +12,30 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+
 @RestController
 @RequestMapping("/api/inventario")
 public class InventarioController {
 
     @Autowired
     private InventarioService inventarioService;
+
+    @Autowired
+    private com.ortiz.Proyecto.service.QrService qrService;
+
+    @GetMapping(value = "/articulos/{id}/barcode", produces = MediaType.IMAGE_PNG_VALUE)
+    public ResponseEntity<byte[]> obtenerBarcode(@PathVariable Long id) {
+        var articuloOpt = inventarioService.obtenerArticulo(id);
+        if (articuloOpt.isEmpty() || articuloOpt.get().getCodigoBarras() == null) {
+            return ResponseEntity.notFound().build();
+        }
+        byte[] imagen = qrService.generarBarcodePng(articuloOpt.get().getCodigoBarras());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"barcode-articulo-" + id + ".png\"")
+                .body(imagen);
+    }
 
     // --- Endpoints de Áreas/Aulas ---
 

@@ -88,6 +88,15 @@ public class InventarioService {
                 area
         );
 
+        // Asociar fotos si vienen en el DTO
+        if (datos.fotos() != null && !datos.fotos().isEmpty()) {
+            for (String base64 : datos.fotos()) {
+                if (base64 != null && !base64.trim().isEmpty()) {
+                    articulo.getFotos().add(new com.ortiz.Proyecto.domain.ArticuloFoto(base64, articulo));
+                }
+            }
+        }
+
         Articulo creado = articuloRepository.save(articulo);
         auditoriaService.registrarLog("CREAR_ARTICULO", "Se inventarió artículo: " + creado.getNombre() + 
                 " (Código: " + creado.getCodigoBarras() + ", Área: " + area.getNombre() + ")");
@@ -116,6 +125,16 @@ public class InventarioService {
         articulo.setEstado(datos.estado() != null ? datos.estado() : "EXCELENTE");
         articulo.setCantidad(datos.cantidad());
         articulo.setArea(area);
+
+        // Actualizar fotos (limpiar anteriores y guardar nuevas)
+        articulo.getFotos().clear();
+        if (datos.fotos() != null && !datos.fotos().isEmpty()) {
+            for (String base64 : datos.fotos()) {
+                if (base64 != null && !base64.trim().isEmpty()) {
+                    articulo.getFotos().add(new com.ortiz.Proyecto.domain.ArticuloFoto(base64, articulo));
+                }
+            }
+        }
 
         Articulo actualizado = articuloRepository.save(articulo);
         auditoriaService.registrarLog("ACTUALIZAR_ARTICULO", "Se actualizó artículo ID: " + id + 

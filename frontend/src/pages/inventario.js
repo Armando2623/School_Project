@@ -69,7 +69,7 @@ export async function renderInventario(container) {
                 <th>Cantidad</th>
                 <th>Estado</th>
                 <th>Descripción</th>
-                ${canEdit() ? '<th style="width:100px">Acciones</th>' : ''}
+                <th style="width:120px">Acciones</th>
               </tr>
             </thead>
             <tbody id="tbody-articulos">
@@ -163,30 +163,42 @@ function filterAndDraw(container) {
   footerLbl.textContent = `${filtered.length} artículos en esta área`;
 
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="${canEdit() ? 6 : 5}" style="text-align:center;padding:28px;color:var(--text3)">Sin artículos registrados en esta área que coincidan</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text3)">Sin artículos registrados en esta área que coincidan</td></tr>`;
     return;
   }
 
   tbody.innerHTML = filtered.map(a => `
     <tr>
       <td>
-        <span style="font-family:monospace;font-weight:700;color:var(--text2);background:var(--border);padding:4px 8px;border-radius:4px;font-size:0.85rem">
-          <i class="fas fa-barcode" style="margin-right:4px"></i>${a.codigoBarras}
+        <span class="view-details-btn" data-id="${a.id}" style="cursor:pointer;font-family:monospace;font-weight:700;color:var(--text2);background:var(--border);padding:4px 8px;border-radius:4px;font-size:0.85rem;display:inline-flex;align-items:center;gap:4px">
+          <i class="fas fa-barcode"></i>${a.codigoBarras}
         </span>
       </td>
-      <td><strong>${a.nombre}</strong></td>
+      <td>
+        <a href="#" class="view-details-btn" data-id="${a.id}" style="color:var(--text);font-weight:700;text-decoration:none;border-bottom:1px dashed var(--text3)">
+          ${a.nombre}
+        </a>
+      </td>
       <td><span class="badge badge-blue" style="font-size:0.9rem">${a.cantidad}</span></td>
       <td><span class="badge ${ESTADO_BADGES[a.estado] ?? 'badge-gray'}">${a.estado.replace('_', ' ')}</span></td>
       <td class="td-muted" style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${a.descripcion ?? ''}">${a.descripcion ?? '—'}</td>
-      ${canEdit() ? `
-        <td style="display:flex;gap:6px">
+      <td style="display:flex;gap:6px">
+        <button class="btn btn-outline btn-sm view-details-btn" data-id="${a.id}" title="Ver detalles y fotos"><i class="fas fa-eye"></i></button>
+        ${canEdit() ? `
           <button class="btn btn-outline btn-sm edit-art-btn" data-id="${a.id}" title="Editar artículo">✏️</button>
           <button class="btn btn-danger btn-sm del-art-btn" data-id="${a.id}" title="Eliminar artículo">🗑</button>
-        </td>
-      ` : ''}
+        ` : ''}
+      </td>
     </tr>`).join('');
 
-  // Click listeners para botones de fila
+  // Click listeners para botones y enlaces de fila
+  tbody.querySelectorAll('.view-details-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openDetallesArticuloModal(articulos.find(x => x.id == btn.dataset.id));
+    });
+  });
+
   if (canEdit()) {
     tbody.querySelectorAll('.edit-art-btn').forEach(btn => {
       btn.addEventListener('click', () => openArticuloModal(container, articulos.find(x => x.id == btn.dataset.id)));
@@ -195,6 +207,106 @@ function filterAndDraw(container) {
       btn.addEventListener('click', () => confirmDeleteArticulo(container, articulos.find(x => x.id == btn.dataset.id)));
     });
   }
+}
+
+// Modal detallado de un artículo (Muestra fotos cargadas y código de barras)
+function openDetallesArticuloModal(art) {
+  // URLs para consumir código de barra
+  const barcodeUrl = `/api/inventario/articulos/${art.id}/barcode`;
+
+  // Renderizar la sección de fotos
+  let fotosHtml = '';
+  if (art.fotos && art.fotos.length > 0) {
+    fotosHtml = `
+      <div style="margin-top:16px">
+        <label style="font-weight:600;font-size:0.9rem;color:var(--text3);margin-bottom:8px;display:block">📷 Fotos del Artículo</label>
+        <div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x mandatory">
+          ${art.fotos.map((f, i) => `
+            <img src="${f.fotoBase64}" alt="Foto ${i+1}" 
+              style="width:160px;height:120px;object-fit:cover;border-radius:8px;border:1px solid var(--border);scroll-snap-align:start;cursor:zoom-in" 
+              onclick="window.open(this.src, '_blank')"
+              title="Click para ampliar" />
+          `).join('')}
+        </div>
+      </div>`;
+  } else {
+    fotosHtml = `
+      <div style="margin-top:16px;text-align:center;padding:24px;border:2px dashed var(--border);border-radius:12px;color:var(--text3)">
+        <i class="fas fa-image" style="font-size:2rem;margin-bottom:8px;display:block;opacity:0.4"></i>
+        Sin fotos registradas para este artículo.
+      </div>`;
+  }
+
+  openModal({
+    title: `📦 Detalles de Artículo — ${art.nombre}`,
+    bodyHTML: `
+      <div style="display:flex;flex-direction:column;gap:16px;padding:8px 0">
+        
+        <!-- Tarjeta de Código de Barras -->
+        <div style="display:flex;flex-direction:column;align-items:center;gap:12px;background:var(--bg2);padding:20px;border-radius:12px;border:1px solid var(--border)">
+          <div style="font-weight:700;font-size:0.95rem;font-family:monospace;color:var(--text)">
+            ${art.codigoBarras}
+          </div>
+          <!-- Imagen del código de barras -->
+          <img src="${barcodeUrl}" alt="Código de barras ${art.codigoBarras}" 
+            style="max-width:100%;height:68px;object-fit:contain;background:white;padding:6px;border-radius:6px;border:1.5px solid var(--border)" />
+          
+          <button class="btn btn-outline btn-sm" id="btn-print-barcode"><i class="fas fa-print"></i> Imprimir Etiqueta</button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+          <div>
+            <span style="font-size:0.8rem;color:var(--text3)">Cantidad</span>
+            <div style="font-size:1.1rem;font-weight:700;color:var(--text)">${art.cantidad} unidades</div>
+          </div>
+          <div>
+            <span style="font-size:0.8rem;color:var(--text3)">Estado</span>
+            <div><span class="badge ${ESTADO_BADGES[art.estado] ?? 'badge-gray'}">${art.estado.replace('_', ' ')}</span></div>
+          </div>
+          <div style="grid-column:1/-1">
+            <span style="font-size:0.8rem;color:var(--text3)">Descripción / Nota</span>
+            <div style="font-size:0.95rem;color:var(--text2)">${art.descripcion || '—'}</div>
+          </div>
+          <div style="grid-column:1/-1">
+            <span style="font-size:0.8rem;color:var(--text3)">Ubicación</span>
+            <div style="font-size:0.95rem;color:var(--text2)">🏫 ${art.area.nombre} (${art.area.tipo})</div>
+          </div>
+        </div>
+
+        ${fotosHtml}
+
+      </div>`,
+    confirmText: 'Cerrar',
+    hideCancelBtn: true,
+    onOpen: (overlay) => {
+      overlay.querySelector('#btn-print-barcode').addEventListener('click', () => {
+        // Ventana de impresión limpia para el código de barras
+        const win = window.open('', '_blank');
+        win.document.write(`
+          <html>
+          <head>
+            <title>Imprimir Etiqueta - ${art.nombre}</title>
+            <style>
+              body { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; font-family:sans-serif; margin:0; }
+              .label { border: 2px solid #000; padding: 20px; border-radius: 8px; text-align: center; width: 320px; }
+              h1 { font-size: 16px; margin: 0 0 10px 0; }
+              img { width: 100%; height: 80px; object-fit: contain; }
+              .code { font-family: monospace; font-size: 14px; font-weight: bold; margin-top: 8px; }
+            </style>
+          </head>
+          <body onload="window.print(); window.close();">
+            <div class="label">
+              <h1>SchoolGuard - ${art.nombre}</h1>
+              <img src="${barcodeUrl}" />
+              <div class="code">${art.codigoBarras}</div>
+            </div>
+          </body>
+          </html>
+        `);
+        win.document.close();
+      });
+    }
+  });
 }
 
 // Modal para crear una nueva área o aula
@@ -242,12 +354,41 @@ function openAreaModal(container) {
   });
 }
 
-// Modal para crear o editar un artículo
+// Modal para crear o editar un artículo (Con soporte de carga de fotos Base64)
 function openArticuloModal(container, art = null) {
   const editar = !!art;
   const areaOptions = areas.map(a => 
     `<option value="${a.id}" ${ (art ? art.area.id : selectedAreaId) === a.id ? 'selected' : ''}>${a.nombre}</option>`
   ).join('');
+
+  // Array local para almacenar fotos en Base64
+  let tempFotos = [];
+  if (editar && art.fotos) {
+    tempFotos = art.fotos.map(f => f.fotoBase64);
+  }
+
+  // Dibuja las previsualizaciones de fotos
+  const updateFotosPreview = (previewEl) => {
+    if (!tempFotos.length) {
+      previewEl.innerHTML = '<span style="color:var(--text3);font-size:0.85rem">No se han seleccionado fotos.</span>';
+      return;
+    }
+    previewEl.innerHTML = tempFotos.map((base64, index) => `
+      <div style="position:relative;width:70px;height:70px;border-radius:6px;overflow:hidden;border:1.5px solid var(--border)">
+        <img src="${base64}" style="width:100%;height:100%;object-fit:cover" />
+        <button type="button" class="remove-photo-btn" data-index="${index}" 
+          style="position:absolute;top:2px;right:2px;background:rgba(239,68,68,0.85);color:white;border:none;width:18px;height:18px;border-radius:50%;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center">
+          ✕
+        </button>
+      </div>`).join('');
+
+    previewEl.querySelectorAll('.remove-photo-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        tempFotos.splice(Number(btn.dataset.index), 1);
+        updateFotosPreview(previewEl);
+      });
+    });
+  };
 
   openModal({
     title: editar ? '✏️ Editar Artículo' : '+ Nuevo Artículo de Inventario',
@@ -301,16 +442,28 @@ function openArticuloModal(container, art = null) {
           <label>Descripción o número de serie</label>
           <input class="form-control" id="mar-desc" value="${art?.descripcion ?? ''}" placeholder="Opcional. Ej: Serie S/N 12345" />
         </div>
+
+        <!-- Nueva sección de fotos -->
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Cargar Fotos del Artículo</label>
+          <input class="form-control" type="file" id="mar-photos-input" multiple accept="image/*" style="padding:4px" />
+          <div id="mar-photos-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"></div>
+        </div>
       </div>`,
     confirmText: editar ? 'Actualizar' : 'Registrar Ítem',
     onOpen: (overlay) => {
       const rAuto = overlay.querySelector('#barcode-auto');
       const rManual = overlay.querySelector('#barcode-manual');
       const input = overlay.querySelector('#mar-barcode');
+      const fileInput = overlay.querySelector('#mar-photos-input');
+      const previewEl = overlay.querySelector('#mar-photos-preview');
 
       if (!editar) {
         input.value = 'SG-XXXXXXXX (Se autogenerará)';
       }
+
+      // Dibujar fotos iniciales
+      updateFotosPreview(previewEl);
 
       rAuto?.addEventListener('change', () => {
         if (rAuto.checked) {
@@ -330,6 +483,28 @@ function openArticuloModal(container, art = null) {
           input.focus();
         }
       });
+
+      // Lector de fotos File -> Base64
+      fileInput?.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files || []);
+        for (const file of files) {
+          try {
+            const base64 = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result);
+              reader.onerror = (err) => reject(err);
+              reader.readAsDataURL(file);
+            });
+            // Guardar base64
+            tempFotos.push(base64);
+          } catch {
+            toast('Error al leer una de las imágenes', 'error');
+          }
+        }
+        updateFotosPreview(previewEl);
+        // Resetear input
+        fileInput.value = '';
+      });
     },
     onConfirm: async (overlay, close) => {
       const isAuto = overlay.querySelector('#barcode-auto')?.checked ?? false;
@@ -342,6 +517,7 @@ function openArticuloModal(container, art = null) {
         areaId:       Number(overlay.querySelector('#mar-area').value),
         codigoBarras: isAuto ? '' : barVal,
         descripcion:  overlay.querySelector('#mar-desc').value.trim(),
+        fotos:        tempFotos // Pasar fotos Base64
       };
 
       if (!body.nombre || !body.cantidad) { toast('Completa los campos obligatorios', 'warning'); return; }
@@ -349,7 +525,7 @@ function openArticuloModal(container, art = null) {
 
       try {
         if (editar) {
-          if (isAuto) body.codigoBarras = art.codigoBarras; // No modificar si estaba automático en edición
+          if (isAuto) body.codigoBarras = art.codigoBarras; // No modificar código si era automático en edición
           await inventarioApi.actualizarArticulo(art.id, body);
           toast('Artículo actualizado exitosamente', 'success');
         } else {

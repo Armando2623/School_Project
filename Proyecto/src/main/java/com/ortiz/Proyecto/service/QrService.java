@@ -45,4 +45,23 @@ public class QrService {
             throw new RuntimeException("Error generando imagen QR: " + e.getMessage(), e);
         }
     }
+
+    /**
+     * Genera una imagen de código de barras CODE_128 en formato PNG.
+     *
+     * @param contenido El texto a codificar en el código de barras
+     * @return byte[] con la imagen PNG
+     */
+    public byte[] generarBarcodePng(String contenido) {
+        try {
+            com.google.zxing.oned.Code128Writer writer = new com.google.zxing.oned.Code128Writer();
+            BitMatrix matrix = writer.encode(contenido, BarcodeFormat.CODE_128, 300, 80);
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            MatrixToImageWriter.writeToStream(matrix, "PNG", baos);
+            return baos.toByteArray();
+        } catch (WriterException | IOException e) {
+            throw new RuntimeException("Error generando código de barras: " + e.getMessage(), e);
+        }
+    }
 }

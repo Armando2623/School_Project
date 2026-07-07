@@ -3,6 +3,8 @@ package com.ortiz.Proyecto.domain;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "articulo")
@@ -34,6 +36,10 @@ public class Articulo {
     @JoinColumn(name = "area_id", nullable = false)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Area area;
+
+    @OneToMany(mappedBy = "articulo", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties("articulo")
+    private List<ArticuloFoto> fotos = new ArrayList<>();
 
     // Constructor de conveniencia sin ID
     public Articulo(String nombre, String descripcion, String codigoBarras, String estado, Integer cantidad, Area area) {
