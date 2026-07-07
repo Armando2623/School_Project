@@ -93,6 +93,7 @@ public class SecurityConfig {
         // ─── Orígenes permitidos: frontend local (dev) + Render (prod) ────────────
         config.setAllowedOriginPatterns(List.of(
                 "http://localhost:[*]",
+                "https://schoolguard-frontend.onrender.com",
                 "https://school-project-1mso.onrender.com"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
