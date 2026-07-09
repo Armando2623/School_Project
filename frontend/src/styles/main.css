@@ -1,4 +1,4 @@
-﻿/* =============================================
+/* =============================================
    SchoolGuard â€” Design System
    ============================================= */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -306,6 +306,7 @@ tbody td { padding: 12px 16px; font-size: 13px; color: var(--text); }
 .badge-red    { background: #fee2e2; color: #991b1b; }
 .badge-gray   { background: #f1f5f9; color: #475569; }
 .badge-purple { background: #ede9fe; color: #5b21b6; }
+.badge-orange { background: #ffedd5; color: #9a3412; }
 
 /* =============================================
    FORMS & MODAL
@@ -581,6 +582,9 @@ select.form-control option { background: #fff; }
   }
 
   .search-box input { width: 160px; }
+
+  /* Inventory: narrower area panel */
+  .inv-areas-panel { width: 200px !important; }
 }
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -684,6 +688,19 @@ select.form-control option { background: #fff; }
 
   /* Page header */
   .page-header { flex-direction: column; align-items: flex-start; }
+
+  /* ── Inventory responsive: mobile ── */
+  .inv-layout { flex-direction: column !important; }
+  .inv-areas-panel {
+    width: 100% !important;
+    flex-shrink: unset !important;
+    padding: 12px !important;
+  }
+  .inv-areas-list { display: none !important; }
+  .inv-areas-select-mobile { display: block !important; }
+  .inv-table-panel { width: 100% !important; }
+  .pagination-bar { flex-wrap: wrap; }
+  .page-btn { min-width: 32px; height: 32px; font-size: 12px; }
 }
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -693,10 +710,85 @@ select.form-control option { background: #fff; }
   .stats-row { grid-template-columns: 1fr; }
   .stat-card { padding: 12px; }
   .page-body { padding: 10px; }
+  .pagination-bar { gap: 4px; }
+  .page-btn { min-width: 28px; height: 28px; font-size: 11px; padding: 0 4px; }
 }
 
-/* â”€â”€ Scrollbar â”€â”€ */
+/* =============================================
+   INVENTORY LAYOUT
+   ============================================= */
+.inv-layout {
+  display: flex;
+  gap: 20px;
+  flex-direction: row;
+  align-items: flex-start;
+}
+.inv-areas-panel {
+  width: 240px;
+  flex-shrink: 0;
+  padding: 12px;
+}
+.inv-areas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.inv-areas-select-mobile {
+  display: none;
+}
+.inv-table-panel {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+/* =============================================
+   PAGINATION
+   ============================================= */
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  background: #fafbfc;
+}
+.page-btn {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s ease;
+}
+.page-btn:hover:not(:disabled):not(.active) {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(99, 102, 241, 0.06);
+}
+.page-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+.page-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-

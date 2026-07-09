@@ -118,7 +118,7 @@ public class SecurityConfig {
 
                         // ─── Cualquier otra ruta autenticada (todos los roles) ─
                         .anyRequest().hasAnyRole(
-                                "ADMINISTRADOR", "PORTERO", "SECRETARIA", "DIRECTOR", "PROFESOR"))
+                                "ADMINISTRADOR", "PORTERO", "SECRETARIA", "DIRECTOR", "PROFESOR", "ENCARGADO_INVENTARIO"))
                 .exceptionHandling(ex -> ex
                         // Devuelve 401 cuando no hay token o es inválido (en vez de 403)
                         .authenticationEntryPoint((req, res, e) -> res.sendError(401, "No autenticado"))

@@ -9,7 +9,11 @@ let articulos = [];
 let selectedAreaId = null;
 let currentSearch = '';
 
-const canEdit = () => store.hasRole('ADMINISTRADOR', 'DIRECTOR', 'SECRETARIA');
+// ── Paginación ──
+let currentPage = 1;
+const PAGE_SIZE = 10;
+
+const canEdit = () => store.hasRole('ADMINISTRADOR', 'DIRECTOR', 'SECRETARIA', 'ENCARGADO_INVENTARIO');
 
 const ESTADO_BADGES = {
   EXCELENTE:        'badge-green',
@@ -22,6 +26,7 @@ const ESTADO_BADGES = {
 export async function renderInventario(container) {
   selectedAreaId = null;
   currentSearch = '';
+  currentPage = 1;
 
   container.innerHTML = `
     <div class="page-topbar">
@@ -30,6 +35,7 @@ export async function renderInventario(container) {
         <div class="sub">Control de activos por aula e infraestructura</div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-outline" id="btn-download-csv" style="display:none"><i class="fas fa-file-csv"></i> Descargar CSV</button>
         ${canEdit() ? `
           <button class="btn btn-outline" id="btn-new-area"><i class="fas fa-folder-plus"></i> Nueva Área / Aula</button>
           <button class="btn btn-primary" id="btn-new-articulo"><i class="fas fa-plus"></i> Nuevo Artículo</button>
@@ -37,20 +43,25 @@ export async function renderInventario(container) {
       </div>
     </div>
 
-    <div class="page-body" style="display:flex;gap:20px;flex-direction:row;align-items:flex-start">
+    <div class="page-body inv-layout">
       
-      <!-- Panel de Áreas/Aulas -->
-      <div class="table-card" style="width:240px;flex-shrink:0;padding:12px">
+      <!-- Panel de Áreas/Aulas (desktop: sidebar, mobile: dropdown) -->
+      <div class="inv-areas-panel table-card">
         <div style="font-weight:700;font-size:0.9rem;color:var(--text3);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px">
           🏫 Áreas y Aulas
         </div>
-        <div id="areas-list-container" style="display:flex;flex-direction:column;gap:6px;max-height:60vh;overflow-y:auto">
+        <!-- Dropdown para móvil -->
+        <select id="areas-select-mobile" class="form-control inv-areas-select-mobile">
+          <option value="">— Selecciona un área —</option>
+        </select>
+        <!-- Lista para desktop -->
+        <div id="areas-list-container" class="inv-areas-list">
           <div style="text-align:center;color:var(--text3);padding:10px">Cargando...</div>
         </div>
       </div>
 
       <!-- Tabla de Artículos -->
-      <div class="table-card" style="flex-grow:1">
+      <div class="table-card inv-table-panel">
         <div class="table-card-header">
           <div class="table-card-title" id="table-title">🎒 Artículos en el Área</div>
           <div class="table-controls">
@@ -78,6 +89,8 @@ export async function renderInventario(container) {
             </tbody>
           </table>
         </div>
+        <!-- Paginación -->
+        <div class="pagination-bar" id="pagination-bar"></div>
         <div class="table-card-footer"><span id="footer-inventario">—</span></div>
       </div>
 
@@ -88,19 +101,49 @@ export async function renderInventario(container) {
   // Listeners de los botones principales
   container.querySelector('#btn-new-area')?.addEventListener('click', () => openAreaModal(container));
   container.querySelector('#btn-new-articulo')?.addEventListener('click', () => openArticuloModal(container));
+  container.querySelector('#btn-download-csv')?.addEventListener('click', () => downloadCSV());
 
   // Buscador de artículos
   container.querySelector('#search-articulos').addEventListener('input', e => {
     currentSearch = e.target.value.toLowerCase().trim();
+    currentPage = 1;
     filterAndDraw(container);
+  });
+
+  // Dropdown de áreas para móvil
+  container.querySelector('#areas-select-mobile').addEventListener('change', e => {
+    const areaId = Number(e.target.value);
+    if (!areaId) return;
+    selectedAreaId = areaId;
+    currentPage = 1;
+    const areaObj = areas.find(a => a.id === selectedAreaId);
+    container.querySelector('#table-title').innerHTML = `📦 ${areaObj.nombre} <span style="font-weight:400;font-size:0.8rem;color:var(--text3)">(${areaObj.tipo})</span>`;
+    // Sync desktop sidebar highlight
+    const list = container.querySelector('#areas-list-container');
+    list.querySelectorAll('.area-selector-btn').forEach(b => b.style.background = 'transparent');
+    const activeBtn = list.querySelector(`.area-selector-btn[data-id="${areaId}"]`);
+    if (activeBtn) activeBtn.style.background = 'rgba(99, 102, 241, 0.1)';
+    showDownloadBtn(container);
+    loadArticulos(container);
   });
 }
 
-// Carga las áreas en el menú lateral izquierdo
+function showDownloadBtn(container) {
+  const btn = container.querySelector('#btn-download-csv');
+  if (btn) btn.style.display = selectedAreaId ? '' : 'none';
+}
+
+// Carga las áreas en el menú lateral izquierdo y en el dropdown móvil
 async function loadAreas(container) {
   try {
     areas = await inventarioApi.listarAreas();
     const list = container.querySelector('#areas-list-container');
+    const select = container.querySelector('#areas-select-mobile');
+
+    // Rellenar dropdown móvil
+    select.innerHTML = '<option value="">— Selecciona un área —</option>' +
+      areas.map(a => `<option value="${a.id}">${a.nombre} (${a.tipo})</option>`).join('');
+
     if (!areas.length) {
       list.innerHTML = `<div style="text-align:center;color:var(--text3);padding:12px;font-size:0.85rem">Sin áreas registradas</div>`;
       return;
@@ -122,8 +165,12 @@ async function loadAreas(container) {
         list.querySelectorAll('.area-selector-btn').forEach(b => b.style.background = 'transparent');
         btn.style.background = 'rgba(99, 102, 241, 0.1)';
         selectedAreaId = Number(btn.dataset.id);
+        currentPage = 1;
         const areaObj = areas.find(a => a.id === selectedAreaId);
         container.querySelector('#table-title').innerHTML = `📦 ${areaObj.nombre} <span style="font-weight:400;font-size:0.8rem;color:var(--text3)">(${areaObj.tipo})</span>`;
+        // Sync dropdown
+        container.querySelector('#areas-select-mobile').value = selectedAreaId;
+        showDownloadBtn(container);
         loadArticulos(container);
       });
     });
@@ -142,17 +189,19 @@ async function loadArticulos(container) {
   if (!selectedAreaId) return;
   try {
     articulos = await inventarioApi.listarArticulos(selectedAreaId);
+    currentPage = 1;
     filterAndDraw(container);
   } catch (err) {
     toast(err.message, 'error');
   }
 }
 
-// Filtra y dibuja las filas de la tabla según la búsqueda actual
+// Filtra y dibuja las filas de la tabla según la búsqueda actual + paginación
 function filterAndDraw(container) {
   const tbody = container.querySelector('#tbody-articulos');
   const countBadge = container.querySelector('#total-articulos');
   const footerLbl = container.querySelector('#footer-inventario');
+  const paginationBar = container.querySelector('#pagination-bar');
 
   const filtered = articulos.filter(a => 
     a.nombre?.toLowerCase().includes(currentSearch) ||
@@ -160,15 +209,22 @@ function filterAndDraw(container) {
     a.descripcion?.toLowerCase().includes(currentSearch)
   );
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  if (currentPage > totalPages) currentPage = totalPages;
+
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageItems = filtered.slice(start, start + PAGE_SIZE);
+
   countBadge.textContent = `${filtered.length}`;
-  footerLbl.textContent = `${filtered.length} artículos en esta área`;
+  footerLbl.textContent = `Mostrando ${pageItems.length} de ${filtered.length} artículos en esta área`;
 
   if (!filtered.length) {
     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text3)">Sin artículos registrados en esta área que coincidan</td></tr>`;
+    paginationBar.innerHTML = '';
     return;
   }
 
-  tbody.innerHTML = filtered.map(a => `
+  tbody.innerHTML = pageItems.map(a => `
     <tr>
       <td>
         <span class="view-details-btn" data-id="${a.id}" style="cursor:pointer;font-family:monospace;font-weight:700;color:var(--text2);background:var(--border);padding:4px 8px;border-radius:4px;font-size:0.85rem;display:inline-flex;align-items:center;gap:4px">
@@ -208,6 +264,83 @@ function filterAndDraw(container) {
       btn.addEventListener('click', () => confirmDeleteArticulo(container, articulos.find(x => x.id == btn.dataset.id)));
     });
   }
+
+  // Renderizar paginación
+  renderPagination(paginationBar, currentPage, totalPages, container);
+}
+
+// ── Controles de paginación ──
+function renderPagination(bar, page, totalPages, container) {
+  if (totalPages <= 1) { bar.innerHTML = ''; return; }
+
+  const maxVisible = 5;
+  let startP = Math.max(1, page - Math.floor(maxVisible / 2));
+  let endP = Math.min(totalPages, startP + maxVisible - 1);
+  if (endP - startP + 1 < maxVisible) startP = Math.max(1, endP - maxVisible + 1);
+
+  let html = '';
+  html += `<button class="page-btn" data-p="1" ${page === 1 ? 'disabled' : ''}><i class="fas fa-angle-double-left"></i></button>`;
+  html += `<button class="page-btn" data-p="${page - 1}" ${page === 1 ? 'disabled' : ''}><i class="fas fa-angle-left"></i></button>`;
+
+  for (let i = startP; i <= endP; i++) {
+    html += `<button class="page-btn ${i === page ? 'active' : ''}" data-p="${i}">${i}</button>`;
+  }
+
+  html += `<button class="page-btn" data-p="${page + 1}" ${page === totalPages ? 'disabled' : ''}><i class="fas fa-angle-right"></i></button>`;
+  html += `<button class="page-btn" data-p="${totalPages}" ${page === totalPages ? 'disabled' : ''}><i class="fas fa-angle-double-right"></i></button>`;
+
+  bar.innerHTML = html;
+
+  bar.querySelectorAll('.page-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const p = Number(btn.dataset.p);
+      if (p >= 1 && p <= totalPages && p !== currentPage) {
+        currentPage = p;
+        filterAndDraw(container);
+      }
+    });
+  });
+}
+
+// ── Descarga CSV ──
+function downloadCSV() {
+  if (!selectedAreaId || !articulos.length) {
+    toast('No hay artículos para descargar', 'warning');
+    return;
+  }
+  const areaObj = areas.find(a => a.id === selectedAreaId);
+  const areaName = areaObj?.nombre ?? 'area';
+
+  // Filtrar según búsqueda actual
+  const filtered = articulos.filter(a =>
+    a.nombre?.toLowerCase().includes(currentSearch) ||
+    a.codigoBarras?.toLowerCase().includes(currentSearch) ||
+    a.descripcion?.toLowerCase().includes(currentSearch)
+  );
+
+  const headers = ['Código de Barras', 'Nombre', 'Cantidad', 'Estado', 'Descripción'];
+  const rows = filtered.map(a => [
+    a.codigoBarras ?? '',
+    a.nombre ?? '',
+    a.cantidad ?? '',
+    (a.estado ?? '').replace('_', ' '),
+    (a.descripcion ?? '').replace(/"/g, '""')
+  ]);
+
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(r => r.map(v => `"${v}"`).join(','))
+  ].join('\n');
+
+  const BOM = '\uFEFF';
+  const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `inventario_${areaName.replace(/\s+/g, '_')}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+  toast(`Inventario de "${areaName}" descargado`, 'success');
 }
 
 // Modal detallado de un artículo (Muestra fotos cargadas y código de barras)
