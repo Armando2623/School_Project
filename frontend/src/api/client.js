@@ -17,11 +17,17 @@ async function request(base, path, options = {}) {
 
   const res = await fetch(`${base}${path}`, { ...options, headers });
 
-  // 401 = token inválido/expirado → limpiar sesión y redirigir al login
+  // 401 = token inválido/expirado → solo limpiar si teníamos token (verdadera expiración)
   if (res.status === 401) {
-    store.clear();
-    window.location.hash = '#/login';
+    if (token) {
+      store.clear();
+      window.location.hash = '#/login';
+    }
     throw new Error('Sesión expirada');
+  }
+  // 403 = autenticado pero sin permiso para este recurso (NO limpiar sesión)
+  if (res.status === 403) {
+    throw new Error('No tienes permiso para acceder a este recurso');
   }
   if (res.status === 204) return null;
   if (!res.ok) {

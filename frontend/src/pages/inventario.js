@@ -345,9 +345,6 @@ function downloadCSV() {
 
 // Modal detallado de un artículo (Muestra fotos cargadas y código de barras)
 function openDetallesArticuloModal(art) {
-  // URLs para consumir código de barra
-  const barcodeUrl = `${MVC_URL}/api/inventario/articulos/${art.id}/barcode`;
-
   // Renderizar la sección de fotos
   let fotosHtml = '';
   if (art.fotos && art.fotos.length > 0) {
@@ -382,8 +379,9 @@ function openDetallesArticuloModal(art) {
             ${art.codigoBarras}
           </div>
           <!-- Imagen del código de barras -->
-          <img src="${barcodeUrl}" alt="Código de barras ${art.codigoBarras}" 
-            style="max-width:100%;height:68px;object-fit:contain;background:white;padding:6px;border-radius:6px;border:1.5px solid var(--border)" />
+          <img id="barcode-img" alt="Código de barras ${art.codigoBarras}" 
+            style="max-width:100%;height:68px;object-fit:contain;background:white;padding:6px;border-radius:6px;border:1.5px solid var(--border); display:none" />
+          <div id="barcode-loading" style="font-size:0.85rem;color:var(--text3)"><i class="fas fa-spinner fa-spin"></i> Cargando código...</div>
           
           <button class="btn btn-outline btn-sm" id="btn-print-barcode"><i class="fas fa-print"></i> Imprimir Etiqueta</button>
         </div>
@@ -412,8 +410,29 @@ function openDetallesArticuloModal(art) {
       </div>`,
     confirmText: 'Cerrar',
     hideCancelBtn: true,
-    onOpen: (overlay) => {
+    onOpen: async (overlay) => {
+      const imgEl = overlay.querySelector('#barcode-img');
+      const loadEl = overlay.querySelector('#barcode-loading');
+      let localUrl = '';
+
+      // Cargar código de barra autenticado
+      try {
+        const blob = await api.fetchBlob(`/inventario/articulos/${art.id}/barcode`);
+        localUrl = URL.createObjectURL(blob);
+        if (imgEl) {
+          imgEl.src = localUrl;
+          imgEl.style.display = 'block';
+        }
+        if (loadEl) loadEl.style.display = 'none';
+      } catch (err) {
+        if (loadEl) loadEl.innerHTML = '<span style="color:var(--error-color)">⚠️ Error al cargar</span>';
+      }
+
       overlay.querySelector('#btn-print-barcode').addEventListener('click', () => {
+        if (!localUrl) {
+          toast('Por favor espera a que se cargue la imagen del código', 'warning');
+          return;
+        }
         // Ventana de impresión limpia para el código de barras
         const win = window.open('', '_blank');
         win.document.write(`
@@ -431,7 +450,7 @@ function openDetallesArticuloModal(art) {
           <body onload="window.print(); window.close();">
             <div class="label">
               <h1>SchoolGuard - ${art.nombre}</h1>
-              <img src="${barcodeUrl}" />
+              <img src="${localUrl}" />
               <div class="code">${art.codigoBarras}</div>
             </div>
           </body>
