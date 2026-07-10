@@ -35,7 +35,9 @@ export async function renderInventario(container) {
         <div class="sub">Control de activos por aula e infraestructura</div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-outline" id="btn-download-csv" style="display:none"><i class="fas fa-file-csv"></i> Descargar CSV</button>
+        <button class="btn btn-outline" id="btn-download-csv" style="display:none"><i class="fas fa-file-csv"></i> CSV</button>
+        <button class="btn btn-outline" id="btn-download-excel" style="display:none"><i class="fas fa-file-excel"></i> Excel</button>
+        <button class="btn btn-outline" id="btn-download-pdf" style="display:none"><i class="fas fa-file-pdf"></i> PDF</button>
         ${canEdit() ? `
           <button class="btn btn-outline" id="btn-new-area"><i class="fas fa-folder-plus"></i> Nueva Área / Aula</button>
           <button class="btn btn-primary" id="btn-new-articulo"><i class="fas fa-plus"></i> Nuevo Artículo</button>
@@ -78,6 +80,7 @@ export async function renderInventario(container) {
               <tr>
                 <th>Código de Barras</th>
                 <th>Nombre</th>
+                <th>Marca</th>
                 <th>Cantidad</th>
                 <th>Estado</th>
                 <th>Descripción</th>
@@ -85,7 +88,7 @@ export async function renderInventario(container) {
               </tr>
             </thead>
             <tbody id="tbody-articulos">
-              <tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text3)">Selecciona un área para ver sus ítems</td></tr>
+              <tr><td colspan="7" style="text-align:center;padding:28px;color:var(--text3)">Selecciona un área para ver sus ítems</td></tr>
             </tbody>
           </table>
         </div>
@@ -102,6 +105,8 @@ export async function renderInventario(container) {
   container.querySelector('#btn-new-area')?.addEventListener('click', () => openAreaModal(container));
   container.querySelector('#btn-new-articulo')?.addEventListener('click', () => openArticuloModal(container));
   container.querySelector('#btn-download-csv')?.addEventListener('click', () => downloadCSV());
+  container.querySelector('#btn-download-excel')?.addEventListener('click', () => downloadExcel());
+  container.querySelector('#btn-download-pdf')?.addEventListener('click', () => downloadPDF());
 
   // Buscador de artículos
   container.querySelector('#search-articulos').addEventListener('input', e => {
@@ -129,8 +134,11 @@ export async function renderInventario(container) {
 }
 
 function showDownloadBtn(container) {
-  const btn = container.querySelector('#btn-download-csv');
-  if (btn) btn.style.display = selectedAreaId ? '' : 'none';
+  const show = selectedAreaId ? '' : 'none';
+  ['#btn-download-csv', '#btn-download-excel', '#btn-download-pdf'].forEach(id => {
+    const btn = container.querySelector(id);
+    if (btn) btn.style.display = show;
+  });
 }
 
 // Carga las áreas en el menú lateral izquierdo y en el dropdown móvil
@@ -205,6 +213,7 @@ function filterAndDraw(container) {
 
   const filtered = articulos.filter(a => 
     a.nombre?.toLowerCase().includes(currentSearch) ||
+    a.marca?.toLowerCase().includes(currentSearch) ||
     a.codigoBarras?.toLowerCase().includes(currentSearch) ||
     a.descripcion?.toLowerCase().includes(currentSearch)
   );
@@ -219,7 +228,7 @@ function filterAndDraw(container) {
   footerLbl.textContent = `Mostrando ${pageItems.length} de ${filtered.length} artículos en esta área`;
 
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text3)">Sin artículos registrados en esta área que coincidan</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--text3)">Sin artículos registrados en esta área que coincidan</td></tr>`;
     paginationBar.innerHTML = '';
     return;
   }
@@ -236,6 +245,7 @@ function filterAndDraw(container) {
           ${a.nombre}
         </a>
       </td>
+      <td class="td-muted">${a.marca ?? '—'}</td>
       <td><span class="badge badge-blue" style="font-size:0.9rem">${a.cantidad}</span></td>
       <td><span class="badge ${ESTADO_BADGES[a.estado] ?? 'badge-gray'}">${a.estado.replace('_', ' ')}</span></td>
       <td class="td-muted" style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${a.descripcion ?? ''}">${a.descripcion ?? '—'}</td>
@@ -302,45 +312,101 @@ function renderPagination(bar, page, totalPages, container) {
   });
 }
 
-// ── Descarga CSV ──
-function downloadCSV() {
-  if (!selectedAreaId || !articulos.length) {
-    toast('No hay artículos para descargar', 'warning');
-    return;
-  }
-  const areaObj = areas.find(a => a.id === selectedAreaId);
-  const areaName = areaObj?.nombre ?? 'area';
-
-  // Filtrar según búsqueda actual
-  const filtered = articulos.filter(a =>
+// ── Helpers de descarga ──
+function getFilteredForDownload() {
+  return articulos.filter(a =>
     a.nombre?.toLowerCase().includes(currentSearch) ||
+    a.marca?.toLowerCase().includes(currentSearch) ||
     a.codigoBarras?.toLowerCase().includes(currentSearch) ||
     a.descripcion?.toLowerCase().includes(currentSearch)
   );
-
-  const headers = ['Código de Barras', 'Nombre', 'Cantidad', 'Estado', 'Descripción'];
-  const rows = filtered.map(a => [
-    a.codigoBarras ?? '',
-    a.nombre ?? '',
-    a.cantidad ?? '',
-    (a.estado ?? '').replace('_', ' '),
-    (a.descripcion ?? '').replace(/"/g, '""')
-  ]);
-
-  const csvContent = [
-    headers.join(','),
-    ...rows.map(r => r.map(v => `"${v}"`).join(','))
-  ].join('\n');
-
-  const BOM = '\uFEFF';
-  const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+}
+function getAreaNameSafe() {
+  return (areas.find(a => a.id === selectedAreaId)?.nombre ?? 'area').replace(/\s+/g, '_');
+}
+function triggerDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `inventario_${areaName.replace(/\s+/g, '_')}.csv`;
+  link.download = filename;
   link.click();
   URL.revokeObjectURL(url);
-  toast(`Inventario de "${areaName}" descargado`, 'success');
+}
+
+// ── Descarga CSV ──
+function downloadCSV() {
+  if (!selectedAreaId || !articulos.length) { toast('No hay artículos para descargar', 'warning'); return; }
+  const filtered = getFilteredForDownload();
+  const areaName = getAreaNameSafe();
+  const headers = ['Código de Barras', 'Nombre', 'Marca', 'Cantidad', 'Estado', 'Descripción'];
+  const rows = filtered.map(a => [
+    a.codigoBarras ?? '', a.nombre ?? '', a.marca ?? '', a.cantidad ?? '',
+    (a.estado ?? '').replace('_', ' '), (a.descripcion ?? '').replace(/"/g, '""')
+  ]);
+  const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
+  triggerDownload(new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' }), `inventario_${areaName}.csv`);
+  toast('CSV descargado', 'success');
+}
+
+// ── Descarga Excel ──
+function downloadExcel() {
+  if (!selectedAreaId || !articulos.length) { toast('No hay artículos para descargar', 'warning'); return; }
+  const filtered = getFilteredForDownload();
+  const areaName = getAreaNameSafe();
+  const esc = (v) => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+<head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets>
+<x:ExcelWorksheet><x:Name>Inventario</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+</x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>
+<table border="1"><thead><tr style="background:#4f46e5;color:#fff;font-weight:700">
+<th>Código de Barras</th><th>Nombre</th><th>Marca</th><th>Cantidad</th><th>Estado</th><th>Descripción</th>
+</tr></thead><tbody>`;
+  for (const a of filtered) {
+    html += `<tr><td>${esc(a.codigoBarras)}</td><td>${esc(a.nombre)}</td><td>${esc(a.marca)}</td><td>${a.cantidad ?? ''}</td><td>${esc((a.estado ?? '').replace('_',' '))}</td><td>${esc(a.descripcion)}</td></tr>`;
+  }
+  html += '</tbody></table></body></html>';
+  triggerDownload(new Blob(['\uFEFF' + html], { type: 'application/vnd.ms-excel;charset=utf-8;' }), `inventario_${areaName}.xls`);
+  toast('Excel descargado', 'success');
+}
+
+// ── Descarga PDF (abre ventana de impresión → Guardar como PDF) ──
+function downloadPDF() {
+  if (!selectedAreaId || !articulos.length) { toast('No hay artículos para descargar', 'warning'); return; }
+  const filtered = getFilteredForDownload();
+  const areaLabel = areas.find(a => a.id === selectedAreaId)?.nombre ?? 'Área';
+  const esc = (v) => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const rows = filtered.map(a => `
+    <tr>
+      <td style="font-family:monospace">${esc(a.codigoBarras)}</td>
+      <td>${esc(a.nombre)}</td>
+      <td>${esc(a.marca)}</td>
+      <td style="text-align:center">${a.cantidad ?? ''}</td>
+      <td>${esc((a.estado ?? '').replace('_',' '))}</td>
+      <td>${esc(a.descripcion)}</td>
+    </tr>`).join('');
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Inventario — ${esc(areaLabel)}</title>
+<style>
+  @page { size: landscape; margin: 12mm; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; color: #1e293b; margin: 0; padding: 20px; }
+  h1 { text-align: center; font-size: 18px; margin: 0 0 4px; }
+  .sub { text-align: center; font-size: 11px; color: #64748b; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid #cbd5e1; padding: 6px 10px; text-align: left; font-size: 11px; }
+  th { background: #4f46e5; color: #fff; font-weight: 600; }
+  tr:nth-child(even) { background: #f8fafc; }
+  .foot { text-align: center; margin-top: 14px; font-size: 9px; color: #94a3b8; }
+</style></head><body onload="window.print()">
+<h1>📦 Inventario — ${esc(areaLabel)}</h1>
+<div class="sub">Generado el ${new Date().toLocaleDateString('es-MX', { year:'numeric', month:'long', day:'numeric' })} · Total: ${filtered.length} artículos</div>
+<table><thead><tr><th>Código</th><th>Nombre</th><th>Marca</th><th>Cant.</th><th>Estado</th><th>Descripción</th></tr></thead>
+<tbody>${rows}</tbody></table>
+<div class="foot">SchoolGuard — Sistema de Inventario Escolar</div>
+</body></html>`);
+  win.document.close();
+  toast('PDF listo para guardar desde el diálogo de impresión', 'success');
 }
 
 // Modal detallado de un artículo (Muestra fotos cargadas y código de barras)
@@ -394,6 +460,10 @@ function openDetallesArticuloModal(art) {
           <div>
             <span style="font-size:0.8rem;color:var(--text3)">Estado</span>
             <div><span class="badge ${ESTADO_BADGES[art.estado] ?? 'badge-gray'}">${art.estado.replace('_', ' ')}</span></div>
+          </div>
+          <div style="grid-column:1/-1">
+            <span style="font-size:0.8rem;color:var(--text3)">Marca</span>
+            <div style="font-size:0.95rem;font-weight:600;color:var(--text)">${art.marca || '—'}</div>
           </div>
           <div style="grid-column:1/-1">
             <span style="font-size:0.8rem;color:var(--text3)">Descripción / Nota</span>
@@ -551,6 +621,11 @@ function openArticuloModal(container, art = null) {
           <label>Nombre del Artículo *</label>
           <input class="form-control" id="mar-nombre" value="${art?.nombre ?? ''}" placeholder="Ej: Proyector Multimedia Epson" />
         </div>
+
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Marca</label>
+          <input class="form-control" id="mar-marca" value="${art?.marca ?? ''}" placeholder="Ej: Epson, Samsung, HP..." />
+        </div>
         
         <div class="form-group">
           <label>Cantidad *</label>
@@ -596,10 +671,24 @@ function openArticuloModal(container, art = null) {
           <input class="form-control" id="mar-desc" value="${art?.descripcion ?? ''}" placeholder="Opcional. Ej: Serie S/N 12345" />
         </div>
 
-        <!-- Nueva sección de fotos -->
+        <!-- Sección de fotos -->
         <div class="form-group" style="grid-column:1/-1">
-          <label>Cargar Fotos del Artículo</label>
-          <input class="form-control" type="file" id="mar-photos-input" multiple accept="image/*" style="padding:4px" />
+          <label>Fotos del Artículo</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+            <label class="btn btn-outline btn-sm" style="cursor:pointer;margin:0">
+              <i class="fas fa-upload"></i> Subir archivo
+              <input class="form-control" type="file" id="mar-photos-input" multiple accept="image/*" style="display:none" />
+            </label>
+            <button type="button" class="btn btn-outline btn-sm" id="btn-open-camera"><i class="fas fa-camera"></i> Tomar foto</button>
+          </div>
+          <!-- Contenedor de cámara (oculto por defecto) -->
+          <div id="camera-container" style="display:none;background:var(--bg2);border:1.5px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px">
+            <video id="camera-video" autoplay playsinline style="width:100%;max-height:280px;border-radius:8px;background:#000;display:block"></video>
+            <div style="display:flex;gap:8px;justify-content:center;margin-top:10px">
+              <button type="button" class="btn btn-primary btn-sm" id="btn-capture-photo"><i class="fas fa-camera"></i> Capturar</button>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-close-camera"><i class="fas fa-times"></i> Cerrar cámara</button>
+            </div>
+          </div>
           <div id="mar-photos-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"></div>
         </div>
       </div>`,
@@ -658,6 +747,64 @@ function openArticuloModal(container, art = null) {
         // Resetear input
         fileInput.value = '';
       });
+
+      // ── Cámara en vivo ──
+      let cameraStream = null;
+      const camContainer = overlay.querySelector('#camera-container');
+      const videoEl = overlay.querySelector('#camera-video');
+
+      const stopCamera = () => {
+        if (cameraStream) {
+          cameraStream.getTracks().forEach(t => t.stop());
+          cameraStream = null;
+        }
+        if (videoEl) videoEl.srcObject = null;
+        if (camContainer) camContainer.style.display = 'none';
+      };
+
+      overlay.querySelector('#btn-open-camera')?.addEventListener('click', async () => {
+        if (cameraStream) { stopCamera(); return; }
+        try {
+          // Intentar cámara trasera primero (ideal para móvil)
+          cameraStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+          });
+          videoEl.srcObject = cameraStream;
+          camContainer.style.display = 'block';
+        } catch (err) {
+          // Fallback: cualquier cámara disponible
+          try {
+            cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            videoEl.srcObject = cameraStream;
+            camContainer.style.display = 'block';
+          } catch (err2) {
+            toast('No se pudo acceder a la cámara. Verifica los permisos.', 'error');
+          }
+        }
+      });
+
+      overlay.querySelector('#btn-capture-photo')?.addEventListener('click', () => {
+        if (!cameraStream || !videoEl.videoWidth) {
+          toast('La cámara no está lista aún', 'warning');
+          return;
+        }
+        // Capturar frame del video a canvas
+        const canvas = document.createElement('canvas');
+        canvas.width = videoEl.videoWidth;
+        canvas.height = videoEl.videoHeight;
+        canvas.getContext('2d').drawImage(videoEl, 0, 0);
+        const base64 = canvas.toDataURL('image/jpeg', 0.85);
+        tempFotos.push(base64);
+        updateFotosPreview(previewEl);
+        toast('📸 Foto capturada', 'success');
+        // No cerrar cámara para permitir múltiples capturas
+      });
+
+      overlay.querySelector('#btn-close-camera')?.addEventListener('click', () => stopCamera());
+
+      // Asegurar que la cámara se detenga si se cierra el modal
+      const origClose = overlay.querySelector('.modal-cancel-btn');
+      origClose?.addEventListener('click', () => stopCamera());
     },
     onConfirm: async (overlay, close) => {
       const isAuto = overlay.querySelector('#barcode-auto')?.checked ?? false;
@@ -665,6 +812,7 @@ function openArticuloModal(container, art = null) {
 
       const body = {
         nombre:       overlay.querySelector('#mar-nombre').value.trim(),
+        marca:        overlay.querySelector('#mar-marca').value.trim(),
         cantidad:     Number(overlay.querySelector('#mar-cant').value),
         estado:       overlay.querySelector('#mar-estado').value,
         areaId:       Number(overlay.querySelector('#mar-area').value),

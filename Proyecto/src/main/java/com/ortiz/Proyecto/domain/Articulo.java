@@ -22,6 +22,8 @@ public class Articulo {
     @Column(nullable = false)
     private String nombre;
 
+    private String marca;
+
     private String descripcion;
 
     @Column(name = "codigo_barras", unique = true, nullable = false)

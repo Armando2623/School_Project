@@ -7,6 +7,7 @@ import java.util.List;
 
 public record DatosRegistroArticulo(
     @NotBlank String nombre,
+    String marca,
     String descripcion,
     String codigoBarras,
     String estado,

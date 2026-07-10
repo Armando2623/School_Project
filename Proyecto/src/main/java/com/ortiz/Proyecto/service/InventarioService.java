@@ -87,6 +87,7 @@ public class InventarioService {
                 datos.cantidad(),
                 area
         );
+        articulo.setMarca(datos.marca());
 
         // Asociar fotos si vienen en el DTO
         if (datos.fotos() != null && !datos.fotos().isEmpty()) {
@@ -121,6 +122,7 @@ public class InventarioService {
         }
 
         articulo.setNombre(datos.nombre());
+        articulo.setMarca(datos.marca());
         articulo.setDescripcion(datos.descripcion());
         articulo.setEstado(datos.estado() != null ? datos.estado() : "EXCELENTE");
         articulo.setCantidad(datos.cantidad());
