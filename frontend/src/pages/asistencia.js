@@ -4,6 +4,8 @@ import { usuariosApi }          from '../api/usuarios.js';
 import { openModal }            from '../components/modal.js';
 import { toast }                from '../components/toast.js';
 import { store }                from '../auth/store.js';
+import { Html5Qrcode }          from 'html5-qrcode';
+import { api }                  from '../api/client.js';
 
 const todayISO = () => new Date().toISOString().split('T')[0];
 const fmt = dt => dt ? new Date(dt).toLocaleString('es-PE') : '—';
@@ -129,7 +131,13 @@ export async function renderAsistencia(container) {
   });
 
   // ── Personal ──────────────────────────────────────
-  try { usuarios = await usuariosApi.listar(); } catch {}
+  try {
+    const res = await usuariosApi.listar();
+    usuarios = Array.isArray(res) ? res : [];
+  } catch (err) {
+    usuarios = [];
+    console.error('Error al listar usuarios para asistencia:', err);
+  }
   await loadPersonal(container, todayISO());
 
   container.querySelector('#btn-filter')?.addEventListener('click', () => {
@@ -331,11 +339,8 @@ function openQrScanner(container) {
     confirmText: 'Cerrar',
     hideCancelBtn: true,
     onOpen: async (overlay) => {
-      // Importar html5-qrcode dinámicamente
       try {
-        const { Html5Qrcode } = await import('html5-qrcode');
         html5QrCode = new Html5Qrcode(scannerId);
-
         const config = { fps: 10, qrbox: { width: 220, height: 220 } };
 
         await html5QrCode.start(
@@ -377,7 +382,6 @@ function openQrScanner(container) {
     try {
       // Hacer una llamada "de prueba" vía el backend MVC para obtener datos del alumno
       // (El microservicio valida internamente; hacemos una llamada al API de alumnos del MVC)
-      const { api } = await import('../api/client.js');
       const alumno = await api.get(`/alumnos/qr/${codigoQr}`);
 
       // Mostrar resultado
