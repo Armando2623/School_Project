@@ -1,5 +1,5 @@
 import { inventarioApi } from '../api/inventario.js';
-import { MVC_URL }      from '../api/client.js';
+import { api, MVC_URL }  from '../api/client.js';
 import { openModal }     from '../components/modal.js';
 import { toast }         from '../components/toast.js';
 import { store }         from '../auth/store.js';
