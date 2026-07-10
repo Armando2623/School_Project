@@ -52,13 +52,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // Solo autenticar si aún no hay un usuario en el contexto
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            try {
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null,
-                    userDetails.getAuthorities());
-            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null,
+                        userDetails.getAuthorities());
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-            SecurityContextHolder.getContext().setAuthentication(authToken);
+                SecurityContextHolder.getContext().setAuthentication(authToken);
+            } catch (Exception e) {
+                // Si la BD falla o el usuario no existe, registrar el error real
+                // en vez de devolver un 401 silencioso
+                System.err.println("[JwtFilter] Error al cargar usuario '" + username + "': " + e.getMessage());
+            }
         }
 
         filterChain.doFilter(request, response);
