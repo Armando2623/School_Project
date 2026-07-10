@@ -12,6 +12,8 @@
     "vite": "^5.2.0"
   },
   "dependencies": {
-    "html5-qrcode": "^2.3.8"
+    "html5-qrcode": "^2.3.8",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8"
   }
 }

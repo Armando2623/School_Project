@@ -3,6 +3,8 @@ import { api, MVC_URL }  from '../api/client.js';
 import { openModal }     from '../components/modal.js';
 import { toast }         from '../components/toast.js';
 import { store }         from '../auth/store.js';
+import { jsPDF }         from 'jspdf';
+import autoTable         from 'jspdf-autotable';
 
 let areas = [];
 let articulos = [];
@@ -369,71 +371,83 @@ function downloadExcel() {
   toast('Excel descargado', 'success');
 }
 
-// ── Descarga PDF (abre ventana de impresión → Guardar como PDF) ──
 function downloadPDF() {
   if (!selectedAreaId || !articulos.length) { toast('No hay artículos para descargar', 'warning'); return; }
   const filtered = getFilteredForDownload();
   const areaLabel = areas.find(a => a.id === selectedAreaId)?.nombre ?? 'Área';
   const areaFile = areaLabel.replace(/\s+/g, '_');
-  const esc = (v) => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const rows = filtered.map(a => `
-    <tr>
-      <td style="font-family:monospace">${esc(a.codigoBarras)}</td>
-      <td>${esc(a.nombre)}</td>
-      <td>${esc(a.marca)}</td>
-      <td style="text-align:center">${a.cantidad ?? ''}</td>
-      <td>${esc((a.estado ?? '').replace('_',' '))}</td>
-      <td>${esc(a.descripcion)}</td>
-    </tr>`).join('');
 
-  const htmlDoc = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-<title>Inventario — ${esc(areaLabel)}</title>
-<style>
-  @page { size: landscape; margin: 12mm; }
-  * { box-sizing: border-box; }
-  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; color: #1e293b; margin: 0; padding: 20px; }
-  h1 { text-align: center; font-size: 18px; margin: 0 0 4px; }
-  .sub { text-align: center; font-size: 11px; color: #64748b; margin-bottom: 16px; }
-  table { width: 100%; border-collapse: collapse; }
-  th, td { border: 1px solid #cbd5e1; padding: 6px 10px; text-align: left; font-size: 11px; }
-  th { background: #4f46e5; color: #fff; font-weight: 600; }
-  tr:nth-child(even) { background: #f8fafc; }
-  .foot { text-align: center; margin-top: 14px; font-size: 9px; color: #94a3b8; }
-</style></head><body>
-<h1>📦 Inventario — ${esc(areaLabel)}</h1>
-<div class="sub">Generado el ${new Date().toLocaleDateString('es-MX', { year:'numeric', month:'long', day:'numeric' })} · Total: ${filtered.length} artículos</div>
-<table><thead><tr><th>Código</th><th>Nombre</th><th>Marca</th><th>Cant.</th><th>Estado</th><th>Descripción</th></tr></thead>
-<tbody>${rows}</tbody></table>
-<div class="foot">SchoolGuard — Sistema de Inventario Escolar</div>
-</body></html>`;
+  try {
+    // Crear documento PDF en orientación horizontal (landscape), tamaño A4
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4'
+    });
 
-  // Crear Blob e iframe oculto para imprimir sin popup blocker
-  const blob = new Blob([htmlDoc], { type: 'text/html;charset=utf-8' });
-  const blobUrl = URL.createObjectURL(blob);
+    // 1. Título y Cabecera
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.setTextColor(79, 70, 229); // Indigo #4f46e5
+    doc.text('SchoolGuard — Reporte de Inventario', 14, 18);
 
-  // Eliminar iframe anterior si existe
-  let oldFrame = document.getElementById('pdf-print-frame');
-  if (oldFrame) oldFrame.remove();
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139); // Slate #64748b
+    doc.text(`Área / Aula: ${areaLabel}`, 14, 24);
+    doc.text(`Generado: ${new Date().toLocaleDateString('es-MX', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' })}`, 14, 29);
+    doc.text(`Total: ${filtered.length} artículos`, 14, 34);
 
-  const iframe = document.createElement('iframe');
-  iframe.id = 'pdf-print-frame';
-  iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;';
-  iframe.src = blobUrl;
-  document.body.appendChild(iframe);
+    // Línea divisoria
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.5);
+    doc.line(14, 38, 283, 38);
 
-  iframe.onload = () => {
-    try {
-      iframe.contentWindow.focus();
-      iframe.contentWindow.print();
-      toast('Usa "Guardar como PDF" en el diálogo de impresión', 'success');
-    } catch (e) {
-      // Fallback: abrir el blob directamente
-      window.open(blobUrl, '_blank');
-      toast('Se abrió el documento. Usa Ctrl+P para guardar como PDF.', 'info');
-    }
-    // Limpiar después de un breve delay
-    setTimeout(() => { iframe.remove(); URL.revokeObjectURL(blobUrl); }, 5000);
-  };
+    // 2. Definir las columnas y filas de la tabla
+    const headers = [['Código de Barras', 'Nombre', 'Marca', 'Cant.', 'Estado', 'Descripción']];
+    const rows = filtered.map(a => [
+      a.codigoBarras ?? '',
+      a.nombre ?? '',
+      a.marca ?? '—',
+      a.cantidad ?? 0,
+      (a.estado ?? '').replace('_', ' '),
+      a.descripcion ?? '—'
+    ]);
+
+    // 3. Renderizar AutoTable
+    autoTable(doc, {
+      startY: 42,
+      head: headers,
+      body: rows,
+      theme: 'striped',
+      headStyles: {
+        fillColor: [79, 70, 229], // Indigo #4f46e5
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 9
+      },
+      bodyStyles: {
+        fontSize: 8.5,
+        textColor: [30, 41, 59] // Slate #1e293b
+      },
+      columnStyles: {
+        0: { cellWidth: 35, fontStyle: 'bold' }, // Código de barras
+        1: { cellWidth: 55 },                    // Nombre
+        2: { cellWidth: 40 },                    // Marca
+        3: { cellWidth: 20, halign: 'center' },   // Cantidad
+        4: { cellWidth: 35 },                    // Estado
+        5: { cellWidth: 'auto' }                 // Descripción
+      },
+      margin: { left: 14, right: 14 }
+    });
+
+    // 4. Descargar archivo directamente en el navegador
+    doc.save(`inventario_${areaFile}.pdf`);
+    toast('PDF descargado exitosamente', 'success');
+  } catch (err) {
+    console.error('Error al generar PDF:', err);
+    toast('Error al generar el PDF de inventario', 'error');
+  }
 }
 
 // Modal detallado de un artículo (Muestra fotos cargadas y código de barras)
