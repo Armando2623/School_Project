@@ -374,6 +374,7 @@ function downloadPDF() {
   if (!selectedAreaId || !articulos.length) { toast('No hay artículos para descargar', 'warning'); return; }
   const filtered = getFilteredForDownload();
   const areaLabel = areas.find(a => a.id === selectedAreaId)?.nombre ?? 'Área';
+  const areaFile = areaLabel.replace(/\s+/g, '_');
   const esc = (v) => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const rows = filtered.map(a => `
     <tr>
@@ -384,8 +385,8 @@ function downloadPDF() {
       <td>${esc((a.estado ?? '').replace('_',' '))}</td>
       <td>${esc(a.descripcion)}</td>
     </tr>`).join('');
-  const win = window.open('', '_blank');
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+
+  const htmlDoc = `<!DOCTYPE html><html><head><meta charset="UTF-8">
 <title>Inventario — ${esc(areaLabel)}</title>
 <style>
   @page { size: landscape; margin: 12mm; }
@@ -398,15 +399,41 @@ function downloadPDF() {
   th { background: #4f46e5; color: #fff; font-weight: 600; }
   tr:nth-child(even) { background: #f8fafc; }
   .foot { text-align: center; margin-top: 14px; font-size: 9px; color: #94a3b8; }
-</style></head><body onload="window.print()">
+</style></head><body>
 <h1>📦 Inventario — ${esc(areaLabel)}</h1>
 <div class="sub">Generado el ${new Date().toLocaleDateString('es-MX', { year:'numeric', month:'long', day:'numeric' })} · Total: ${filtered.length} artículos</div>
 <table><thead><tr><th>Código</th><th>Nombre</th><th>Marca</th><th>Cant.</th><th>Estado</th><th>Descripción</th></tr></thead>
 <tbody>${rows}</tbody></table>
 <div class="foot">SchoolGuard — Sistema de Inventario Escolar</div>
-</body></html>`);
-  win.document.close();
-  toast('PDF listo para guardar desde el diálogo de impresión', 'success');
+</body></html>`;
+
+  // Crear Blob e iframe oculto para imprimir sin popup blocker
+  const blob = new Blob([htmlDoc], { type: 'text/html;charset=utf-8' });
+  const blobUrl = URL.createObjectURL(blob);
+
+  // Eliminar iframe anterior si existe
+  let oldFrame = document.getElementById('pdf-print-frame');
+  if (oldFrame) oldFrame.remove();
+
+  const iframe = document.createElement('iframe');
+  iframe.id = 'pdf-print-frame';
+  iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;';
+  iframe.src = blobUrl;
+  document.body.appendChild(iframe);
+
+  iframe.onload = () => {
+    try {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      toast('Usa "Guardar como PDF" en el diálogo de impresión', 'success');
+    } catch (e) {
+      // Fallback: abrir el blob directamente
+      window.open(blobUrl, '_blank');
+      toast('Se abrió el documento. Usa Ctrl+P para guardar como PDF.', 'info');
+    }
+    // Limpiar después de un breve delay
+    setTimeout(() => { iframe.remove(); URL.revokeObjectURL(blobUrl); }, 5000);
+  };
 }
 
 // Modal detallado de un artículo (Muestra fotos cargadas y código de barras)
