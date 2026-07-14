@@ -38,7 +38,8 @@ public class AsistenciaAlumnoService {
     @Autowired
     private NotificacionEmailService notificacionEmailService;
 
-    @Value("${mvc.base-url:http://localhost:8080}")
+    @Value("${MVC_BASE_URL:https://school-project-1mso.onrender.com}")
+ // se cambiara esto   @Value("${mvc.base-url:http://localhost:8080}")
     private String mvcBaseUrl;
 
     private final RestTemplate restTemplate = new RestTemplate();
