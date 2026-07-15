@@ -64,14 +64,18 @@ public class NotificacionEmailService {
             TipoEvento tipoEvento,
             LocalDateTime horaEvento) {
 
+        log.info("[Notificacion] Iniciando proceso de envio de email para el alumno '{}' (Email apoderado: {})", 
+                nombreAlumno, emailApoderado);
+
         // Si el apoderado no tiene email registrado, solo registramos una advertencia
         if (emailApoderado == null || emailApoderado.isBlank()) {
-            log.warn("[Notificacion] Alumno '{}' sin email de apoderado — no se envió notificación.",
+            log.warn("[Notificacion] Alumno '{}' sin email de apoderado - no se envio notificacion.",
                     nombreAlumno);
             return;
         }
 
         try {
+            log.info("[Notificacion] Creando mensaje MIME para envio de correo...");
             MimeMessage mensaje = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mensaje, true, "UTF-8");
 
@@ -81,14 +85,16 @@ public class NotificacionEmailService {
             helper.setText(construirCuerpoHtml(
                     nombreApoderado, nombreAlumno, grado, seccion, tipoEvento, horaEvento), true);
 
+            log.info("[Notificacion] Enviando correo a traves de JavaMailSender a {}...", emailApoderado);
             mailSender.send(mensaje);
-            log.info("[Notificacion] Email enviado a {} — Alumno: {} — Evento: {}",
+            log.info("[Notificacion] Email enviado con exito a {} - Alumno: {} - Evento: {}",
                     emailApoderado, nombreAlumno, tipoEvento);
 
-        } catch (MessagingException | java.io.UnsupportedEncodingException e) {
+        } catch (Exception e) {
+            // Capturamos Exception genérica (incluye MailException de Spring y NullPointerException)
             // El email falla silenciosamente para no afectar el registro de asistencia
-            log.error("[Notificacion] Error al enviar email a {} para alumno '{}': {}",
-                    emailApoderado, nombreAlumno, e.getMessage());
+            log.error("[Notificacion] Error critico al enviar email a {} para alumno '{}'. Mensaje: {}, Causa: {}",
+                    emailApoderado, nombreAlumno, e.getMessage(), e.getCause(), e);
         }
     }
 
