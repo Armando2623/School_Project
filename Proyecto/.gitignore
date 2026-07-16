@@ -71,5 +71,10 @@ desktop.ini
 *.ear
 
 
+# otros
+.metals
+.vscode
+.docs
+
 # Archivos de logs de la aplicación
 /logs/

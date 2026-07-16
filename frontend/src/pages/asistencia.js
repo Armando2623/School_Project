@@ -7,7 +7,16 @@ import { store }                from '../auth/store.js';
 import { Html5Qrcode }          from 'html5-qrcode';
 import { api }                  from '../api/client.js';
 
-const todayISO = () => new Date().toISOString().split('T')[0];
+/* ── Helpers de fecha/hora LOCAL (evita usar UTC del servidor Render) ── */
+const todayISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
+const localNow = () => {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+};
 const fmt = dt => dt ? new Date(dt).toLocaleString('es-PE') : '—';
 const tipoBadge = t => t === 'ENTRADA'
   ? '<span class="badge badge-green">▶ ENTRADA</span>'
@@ -240,7 +249,7 @@ function openFormPersonal(container) {
         rolPersonal:    selOpt.dataset.rol,
         tipoEvento:     overlay.querySelector('#m-tipo').value,
         horaEvento:     overlay.querySelector('#m-hora').value
-                          ? new Date(overlay.querySelector('#m-hora').value).toISOString() : null,
+                          ? overlay.querySelector('#m-hora').value + ':00' : null,
         observaciones:  overlay.querySelector('#m-obs').value.trim() || null,
       };
       try {
@@ -416,7 +425,7 @@ async function registrarAsistenciaAlumno(overlay, codigoQr, tipoEvento, containe
   const body = {
     codigoQr,
     tipoEvento,
-    horaEvento: null, // el servidor usa LocalDateTime.now()
+    horaEvento: localNow(), // hora local del frontend (no depende del reloj del servidor)
     registradoPorId: store.id() ? Number(store.id()) : null,
     observaciones: obs,
   };
