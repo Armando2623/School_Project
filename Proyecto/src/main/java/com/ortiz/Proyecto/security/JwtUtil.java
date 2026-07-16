@@ -17,7 +17,10 @@ import java.util.Map;
 public class JwtUtil {
 
     // Clave secreta de al menos 256 bits recomendada para HS256
-    private static final String SECRET = "SchoolGuardSecretKeyMuySeguraParaJWT2024XYZ!";
+    //se agrego esto
+    @Value("${jwt.secret}")
+     // se eliminara esto private String SECRET = "SchoolGuardSecretKeyMuySeguraParaJWT2024XYZ!";
+    private String SECRET;
     private static final long EXPIRATION_MS = 8 * 60 * 60 * 1000L; // 8 horas
 
     private Key getKey() {
