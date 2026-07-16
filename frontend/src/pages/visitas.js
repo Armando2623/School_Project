@@ -8,6 +8,11 @@ const ESTADOS = ['REGISTRADO', 'EN_CURSO', 'COMPLETADO'];
 const BADGE = { REGISTRADO:'badge-blue', EN_CURSO:'badge-yellow', COMPLETADO:'badge-green' };
 const badge = (e) => `<span class="badge ${BADGE[e]??'badge-gray'}">${e??'—'}</span>`;
 const fmt   = (dt) => dt ? new Date(dt).toLocaleString('es-PE') : '—';
+const localISO = (dt) => {
+  const d = dt ? new Date(dt) : new Date();
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
 const canEdit = () => store.hasRole('ADMINISTRADOR','PORTERO','SECRETARIA');
 
 let allVisitas = [];
@@ -99,7 +104,7 @@ async function openFormModal(container, visita = null) {
   const editar = !!visita;
   let usuarios = [];
   try { usuarios = await visitasApi.buscarUsuarios(''); } catch {}
-  const now = new Date().toISOString().slice(0,16);
+  const now = localISO();
 
   openModal({
     title: editar ? '✏️ Editar Visita' : '+ Nueva Visita',
@@ -136,7 +141,7 @@ async function openFormModal(container, visita = null) {
         <div class="form-group">
           <label>Hora Ingreso</label>
           <input class="form-control" type="datetime-local" id="m-hora"
-            value="${visita?.horaIngreso ? new Date(visita.horaIngreso).toISOString().slice(0,16) : now}" />
+            value="${visita?.horaIngreso ? localISO(visita.horaIngreso) : now}" />
         </div>
       </div>`,
     confirmText: editar ? 'Actualizar' : 'Registrar',
@@ -151,7 +156,7 @@ async function openFormModal(container, visita = null) {
       const payload = {
         dniVisitante: dni, nombreVisitante: nombre, motivo,
         usuario_id: Number(usuId), estadoRegistro: estado,
-        horaIngreso: hora ? new Date(hora).toISOString() : null,
+        horaIngreso: hora ? hora + ':00' : localISO() + ':00',
       };
       try {
         if (editar) await visitasApi.actualizar(visita.id, payload);
