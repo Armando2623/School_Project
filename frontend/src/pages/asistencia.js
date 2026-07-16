@@ -24,6 +24,8 @@ const tipoBadge = t => t === 'ENTRADA'
 
 let allPersonal = [], allAlumnos = [], usuarios = [];
 let activeTab = 'personal'; // 'personal' | 'alumnos'
+let pagePersonal = 1, pageAlumnos = 1;
+const PAGE_SIZE = 10;
 
 export async function renderAsistencia(container) {
   const canRegister = store.hasRole('ADMINISTRADOR','PORTERO','SECRETARIA');
@@ -81,6 +83,7 @@ export async function renderAsistencia(container) {
               <tbody id="tbody-personal"></tbody>
             </table>
           </div>
+          <div class="pagination-bar" id="pagination-personal"></div>
           <div class="table-card-footer"><span id="footer-personal">—</span></div>
         </div>
       </div>
@@ -119,6 +122,7 @@ export async function renderAsistencia(container) {
               <tbody id="tbody-alumnos"></tbody>
             </table>
           </div>
+          <div class="pagination-bar" id="pagination-alumnos"></div>
           <div class="table-card-footer"><span id="footer-alumnos">—</span></div>
         </div>
       </div>
@@ -174,8 +178,8 @@ export async function renderAsistencia(container) {
 async function loadPersonal(container, fecha) {
   try {
     allPersonal = await asistenciaApi.porFecha(fecha);
+    pagePersonal = 1;
     container.querySelector('#total-personal').textContent = `${allPersonal.length}`;
-    container.querySelector('#footer-personal').textContent = `${allPersonal.length} registros`;
     drawPersonal(container, allPersonal);
   } catch { toast('No se pudo conectar al servicio de asistencia (puerto 8081)', 'error'); }
 }
@@ -183,18 +187,30 @@ async function loadPersonal(container, fecha) {
 async function loadAllPersonal(container) {
   try {
     allPersonal = await asistenciaApi.listar();
+    pagePersonal = 1;
     container.querySelector('#total-personal').textContent = `${allPersonal.length}`;
-    container.querySelector('#footer-personal').textContent = `${allPersonal.length} registros totales`;
     drawPersonal(container, allPersonal);
   } catch (err) { toast(err.message, 'error'); }
 }
 
 function drawPersonal(container, data) {
   const tbody = container.querySelector('#tbody-personal');
+  const footer = container.querySelector('#footer-personal');
+  const pagBar = container.querySelector('#pagination-personal');
   if (!data.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Sin registros para este filtro</td></tr>'; return;
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Sin registros para este filtro</td></tr>';
+    footer.textContent = '0 registros';
+    pagBar.innerHTML = '';
+    return;
   }
-  tbody.innerHTML = data.map(r => `
+  const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE));
+  if (pagePersonal > totalPages) pagePersonal = totalPages;
+  const start = (pagePersonal - 1) * PAGE_SIZE;
+  const pageItems = data.slice(start, start + PAGE_SIZE);
+
+  footer.textContent = `Mostrando ${start + 1}–${start + pageItems.length} de ${data.length} registros`;
+
+  tbody.innerHTML = pageItems.map(r => `
     <tr>
       <td><strong>${r.nombrePersonal}</strong></td>
       <td><span class="badge badge-purple">${r.rolPersonal}</span></td>
@@ -202,6 +218,11 @@ function drawPersonal(container, data) {
       <td class="td-small">${fmt(r.horaEvento)}</td>
       <td class="td-muted">${r.observaciones ?? '—'}</td>
     </tr>`).join('');
+
+  renderPagination(pagBar, pagePersonal, totalPages, p => {
+    pagePersonal = p;
+    drawPersonal(container, data);
+  });
 }
 
 function openFormPersonal(container) {
@@ -270,8 +291,8 @@ function openFormPersonal(container) {
 async function loadAlumnos(container, fecha) {
   try {
     allAlumnos = await asistenciaAlumnosApi.porFecha(fecha);
+    pageAlumnos = 1;
     container.querySelector('#total-alumnos').textContent = `${allAlumnos.length}`;
-    container.querySelector('#footer-alumnos').textContent = `${allAlumnos.length} registros`;
     drawAlumnos(container, allAlumnos);
   } catch { toast('No se pudo cargar asistencia de alumnos', 'error'); }
 }
@@ -279,18 +300,30 @@ async function loadAlumnos(container, fecha) {
 async function loadAllAlumnos(container) {
   try {
     allAlumnos = await asistenciaAlumnosApi.listar();
+    pageAlumnos = 1;
     container.querySelector('#total-alumnos').textContent = `${allAlumnos.length}`;
-    container.querySelector('#footer-alumnos').textContent = `${allAlumnos.length} registros totales`;
     drawAlumnos(container, allAlumnos);
   } catch (err) { toast(err.message, 'error'); }
 }
 
 function drawAlumnos(container, data) {
   const tbody = container.querySelector('#tbody-alumnos');
+  const footer = container.querySelector('#footer-alumnos');
+  const pagBar = container.querySelector('#pagination-alumnos');
   if (!data.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Sin registros para este filtro</td></tr>'; return;
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Sin registros para este filtro</td></tr>';
+    footer.textContent = '0 registros';
+    pagBar.innerHTML = '';
+    return;
   }
-  tbody.innerHTML = data.map(r => `
+  const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE));
+  if (pageAlumnos > totalPages) pageAlumnos = totalPages;
+  const start = (pageAlumnos - 1) * PAGE_SIZE;
+  const pageItems = data.slice(start, start + PAGE_SIZE);
+
+  footer.textContent = `Mostrando ${start + 1}–${start + pageItems.length} de ${data.length} registros`;
+
+  tbody.innerHTML = pageItems.map(r => `
     <tr>
       <td><strong>${r.nombreAlumno}</strong></td>
       <td><span class="badge badge-blue">${r.grado ?? '—'}</span></td>
@@ -299,6 +332,41 @@ function drawAlumnos(container, data) {
       <td class="td-small">${fmt(r.horaEvento)}</td>
       <td class="td-muted">${r.observaciones ?? '—'}</td>
     </tr>`).join('');
+
+  renderPagination(pagBar, pageAlumnos, totalPages, p => {
+    pageAlumnos = p;
+    drawAlumnos(container, data);
+  });
+}
+
+/* ── Paginación reutilizable (mismo estilo que inventario) ── */
+function renderPagination(bar, page, totalPages, onPageChange) {
+  if (totalPages <= 1) { bar.innerHTML = ''; return; }
+
+  const maxVisible = 5;
+  let startP = Math.max(1, page - Math.floor(maxVisible / 2));
+  let endP = Math.min(totalPages, startP + maxVisible - 1);
+  if (endP - startP + 1 < maxVisible) startP = Math.max(1, endP - maxVisible + 1);
+
+  let html = '';
+  html += `<button class="page-btn" data-p="1" ${page === 1 ? 'disabled' : ''}><i class="fas fa-angle-double-left"></i></button>`;
+  html += `<button class="page-btn" data-p="${page - 1}" ${page === 1 ? 'disabled' : ''}><i class="fas fa-angle-left"></i></button>`;
+  for (let i = startP; i <= endP; i++) {
+    html += `<button class="page-btn ${i === page ? 'active' : ''}" data-p="${i}">${i}</button>`;
+  }
+  html += `<button class="page-btn" data-p="${page + 1}" ${page === totalPages ? 'disabled' : ''}><i class="fas fa-angle-right"></i></button>`;
+  html += `<button class="page-btn" data-p="${totalPages}" ${page === totalPages ? 'disabled' : ''}><i class="fas fa-angle-double-right"></i></button>`;
+
+  bar.innerHTML = html;
+
+  bar.querySelectorAll('.page-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const p = Number(btn.dataset.p);
+      if (p >= 1 && p <= totalPages && p !== page) {
+        onPageChange(p);
+      }
+    });
+  });
 }
 
 /**

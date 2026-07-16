@@ -74,7 +74,7 @@ desktop.ini
 # otros
 .metals
 .vscode
-.docs
+docs
 
 # Archivos de logs de la aplicación
 /logs/
