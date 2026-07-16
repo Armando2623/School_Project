@@ -99,9 +99,7 @@ function draw(container, data) {
       <td class="td-muted">${v.email ?? '—'}</td>
       <td>
         <span class="badge badge-purple detail-btn" data-id="${v.id}"
-              style="cursor:pointer;transition:transform .15s;display:inline-block"
-              onmouseover="this.style.transform='scale(1.12)'"
-              onmouseout="this.style.transform='scale(1)'"
+              style="cursor:pointer;display:inline-block"
         >${v.hijosData.length} hijos</span>
       </td>
       ${canEdit() ? `<td><button class="btn btn-outline btn-sm edit-btn" data-id="${v.id}">✏️ Editar</button></td>` : ''}

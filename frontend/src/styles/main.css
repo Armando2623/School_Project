@@ -792,3 +792,11 @@ select.form-control option { background: #fff; }
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* ── Detail badge hover (visitantes) ── */
+.detail-btn {
+  transition: transform .15s ease;
+}
+.detail-btn:hover {
+  transform: scale(1.12);
+}
