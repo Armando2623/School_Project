@@ -1,7 +1,8 @@
-import { visitasApi } from '../api/visitas.js';
-import { openModal }  from '../components/modal.js';
-import { toast }      from '../components/toast.js';
-import { store }      from '../auth/store.js';
+import { visitasApi }    from '../api/visitas.js';
+import { visitantesApi } from '../api/visitantes.js';
+import { openModal }     from '../components/modal.js';
+import { toast }         from '../components/toast.js';
+import { store }         from '../auth/store.js';
 
 const ESTADOS = ['REGISTRADO', 'EN_CURSO', 'COMPLETADO'];
 const BADGE = { REGISTRADO:'badge-blue', EN_CURSO:'badge-yellow', COMPLETADO:'badge-green' };
@@ -165,11 +166,31 @@ async function openFormModal(container, visita = null) {
     document.querySelector('#btn-dni')?.addEventListener('click', async () => {
       const dni = document.querySelector('#m-dni')?.value.trim();
       if (!dni) return;
+      
       try {
+        // 1. Intentar buscar en la tabla general de visitantes (padres registrados)
+        const v = await visitantesApi.buscarPorDni(dni);
+        if (v && v.nombreVisitante) {
+          document.querySelector('#m-nombre').value = v.nombreVisitante;
+          toast('Datos autocompletados (desde Visitantes)', 'info');
+          return;
+        }
+      } catch (err) {
+        // Si no se encuentra en visitantes (404), intentamos con el historial de visitas
+      }
+
+      try {
+        // 2. Fallback: buscar en el historial de visitas pasadas
         const r = await visitasApi.buscarPorDni(dni);
-        if (r) { document.querySelector('#m-nombre').value = r.nombreVisitante ?? ''; toast('Datos autocompletados', 'info'); }
-        else toast('DNI no encontrado', 'warning');
-      } catch { toast('DNI no encontrado', 'warning'); }
+        if (r && r.nombreVisitante) {
+          document.querySelector('#m-nombre').value = r.nombreVisitante;
+          toast('Datos autocompletados (desde Historial)', 'info');
+        } else {
+          toast('DNI no encontrado', 'warning');
+        }
+      } catch {
+        toast('DNI no encontrado', 'warning');
+      }
     });
   }, 100);
 }
