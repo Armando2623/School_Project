@@ -94,10 +94,12 @@
 			<scope>test</scope>
 		</dependency>
 
-		<!-- Email (SMTP) — para notificaciones a padres al registrar asistencia -->
+		<!-- Email (Resend HTTP API) — para notificaciones a padres al registrar asistencia -->
+		<!-- Render bloquea SMTP; Resend usa HTTP y funciona en cualquier hosting -->
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-mail</artifactId>
+			<groupId>com.resend</groupId>
+			<artifactId>resend-java</artifactId>
+			<version>3.2.0</version>
 		</dependency>
 	</dependencies>
 

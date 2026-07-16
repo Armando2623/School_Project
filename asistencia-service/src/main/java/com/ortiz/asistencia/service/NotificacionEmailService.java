@@ -1,14 +1,11 @@
 package com.ortiz.asistencia.service;
 
 import com.ortiz.asistencia.domain.TipoEvento;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import com.resend.Resend;
+import com.resend.services.emails.model.CreateEmailOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -33,14 +30,22 @@ public class NotificacionEmailService {
             DateTimeFormatter.ofPattern("dd 'de' MMMM 'de' yyyy",
                     new java.util.Locale("es", "PE"));
 
-    @Autowired
-    private JavaMailSender mailSender;
+    @Value("${resend.api-key}")
+    private String resendApiKey;
 
-    @Value("${notificacion.email.from:TU_CORREO@gmail.com}")
+    @Value("${notificacion.email.from:onboarding@resend.dev}")
     private String emailFrom;
 
     @Value("${notificacion.email.nombre-remitente:SchoolGuard}")
     private String nombreRemitente;
+
+    private Resend resend;
+
+    @jakarta.annotation.PostConstruct
+    public void init() {
+        log.info("[Notificacion] Inicializando cliente de Resend con API Key...");
+        this.resend = new Resend(resendApiKey);
+    }
 
     /**
      * Envía un email de notificación al apoderado sobre la asistencia de su hijo.
@@ -75,23 +80,23 @@ public class NotificacionEmailService {
         }
 
         try {
-            log.info("[Notificacion] Creando mensaje MIME para envio de correo...");
-            MimeMessage mensaje = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+            log.info("[Notificacion] Creando peticion de email para Resend...");
+            String deRemitente = "%s <%s>".formatted(nombreRemitente, emailFrom);
+            
+            CreateEmailOptions options = CreateEmailOptions.builder()
+                    .from(deRemitente)
+                    .to(emailApoderado)
+                    .subject(construirAsunto(tipoEvento, nombreAlumno))
+                    .html(construirCuerpoHtml(
+                            nombreApoderado, nombreAlumno, grado, seccion, tipoEvento, horaEvento))
+                    .build();
 
-            helper.setFrom(emailFrom, nombreRemitente);
-            helper.setTo(emailApoderado);
-            helper.setSubject(construirAsunto(tipoEvento, nombreAlumno));
-            helper.setText(construirCuerpoHtml(
-                    nombreApoderado, nombreAlumno, grado, seccion, tipoEvento, horaEvento), true);
-
-            log.info("[Notificacion] Enviando correo a traves de JavaMailSender a {}...", emailApoderado);
-            mailSender.send(mensaje);
+            log.info("[Notificacion] Enviando correo a traves de Resend HTTP API a {}...", emailApoderado);
+            resend.emails().send(options);
             log.info("[Notificacion] Email enviado con exito a {} - Alumno: {} - Evento: {}",
                     emailApoderado, nombreAlumno, tipoEvento);
 
         } catch (Exception e) {
-            // Capturamos Exception genérica (incluye MailException de Spring y NullPointerException)
             // El email falla silenciosamente para no afectar el registro de asistencia
             log.error("[Notificacion] Error critico al enviar email a {} para alumno '{}'. Mensaje: {}, Causa: {}",
                     emailApoderado, nombreAlumno, e.getMessage(), e.getCause(), e);
