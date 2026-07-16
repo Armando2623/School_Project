@@ -162,35 +162,63 @@ async function openFormModal(container, visita = null) {
     },
   });
 
-  setTimeout(() => {
-    document.querySelector('#btn-dni')?.addEventListener('click', async () => {
-      const dni = document.querySelector('#m-dni')?.value.trim();
-      if (!dni) return;
-      
-      try {
-        // 1. Intentar buscar en la tabla general de visitantes (padres registrados)
-        const v = await visitantesApi.buscarPorDni(dni);
-        if (v && v.nombreVisitante) {
-          document.querySelector('#m-nombre').value = v.nombreVisitante;
-          toast('Datos autocompletados (desde Visitantes)', 'info');
-          return;
-        }
-      } catch (err) {
-        // Si no se encuentra en visitantes (404), intentamos con el historial de visitas
-      }
+  // 1. Definimos la lógica de búsqueda de forma independiente y limpia
+  async function buscarYAutocompletarDni() {
+    const dniInput = document.querySelector('#m-dni');
+    const nombreInput = document.querySelector('#m-nombre');
 
-      try {
-        // 2. Fallback: buscar en el historial de visitas pasadas
-        const r = await visitasApi.buscarPorDni(dni);
-        if (r && r.nombreVisitante) {
-          document.querySelector('#m-nombre').value = r.nombreVisitante;
-          toast('Datos autocompletados (desde Historial)', 'info');
-        } else {
-          toast('DNI no encontrado', 'warning');
-        }
-      } catch {
+    if (!dniInput || !nombreInput) return;
+
+    const dni = dniInput.value.trim();
+    if (!dni) {
+      toast('Por favor, ingresa un DNI', 'warning');
+      return;
+    }
+
+    // Deshabilitamos temporalmente el botón o el input para evitar doble click
+    const btn = document.querySelector('#btn-dni');
+    if (btn) btn.disabled = true;
+
+    try {
+      // Intento 1: Tabla general de visitantes
+      const v = await visitantesApi.buscarPorDni(dni);
+      if (v && v.nombreVisitante) {
+        nombreInput.value = v.nombreVisitante;
+        toast('Datos autocompletados (desde Visitantes)', 'info');
+        return; // Salimos si lo encontramos aquí
+      }
+    } catch (err) {
+      // Opcional: Solo ignoramos si es un 404 (No encontrado)
+      if (err.status !== 404) {
+        console.warn('Error en visitantesApi, intentando historial...', err);
+      }
+    }
+
+    try {
+      // Intento 2: Historial de visitas pasadas
+      const r = await visitasApi.buscarPorDni(dni);
+      if (r && r.nombreVisitante) {
+        nombreInput.value = r.nombreVisitante;
+        toast('Datos autocompletados (desde Historial)', 'info');
+      } else {
         toast('DNI no encontrado', 'warning');
       }
-    });
+    } catch (err) {
+      console.error('Error en visitasApi:', err);
+      toast('No se pudo encontrar el DNI en el sistema', 'warning');
+    } finally {
+      // Volvemos a habilitar el botón al terminar todo el flujo
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  // 2. Registro del evento evitando duplicados
+  setTimeout(() => {
+    const btnDni = document.querySelector('#btn-dni');
+    if (btnDni) {
+      // Removemos cualquier listener previo para evitar acumular clicks
+      btnDni.removeEventListener('click', buscarYAutocompletarDni);
+      btnDni.addEventListener('click', buscarYAutocompletarDni);
+    }
   }, 100);
 }
