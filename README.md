@@ -1,4 +1,4 @@
-# 🛡️ SchoolGuard (ViraSchool) — Sistema de Gestión Escolar y Control de Accesos
+# SchoolGuard (ViraSchool) — Sistema de Gestión Escolar y Control de Accesos
 
 **SchoolGuard (ViraSchool)** es un sistema distribuido y moderno diseñado para optimizar el control de accesos, el registro de asistencia en tiempo real (mediante códigos QR y formularios) y la gestión de visitas físicas, visitantes, inventario escolar y agendas académicas. 
 
@@ -6,7 +6,7 @@ El proyecto cuenta con una arquitectura basada en **microservicios backend (Spri
 
 ---
 
-## 🛠️ Arquitectura General
+## Arquitectura General
 
 El sistema se compone de un cliente frontend SPA que se comunica directamente de forma asíncrona con tres microservicios backend utilizando peticiones HTTP seguras autenticadas con **JSON Web Tokens (JWT)**.
 
@@ -38,7 +38,7 @@ graph TD
 
 ---
 
-## 🚀 Características del Sistema
+## Características del Sistema
 
 ### 1. Control de Asistencia (Microservicio Asistencia)
 * **Personal**: Registro manual de entrada/salida para personal docente y administrativo.
@@ -61,7 +61,7 @@ graph TD
 
 ---
 
-## 💻 Tecnologías Utilizadas
+## Tecnologías Utilizadas
 
 ### Frontend
 * **Core**: HTML5, Vanilla JavaScript (ES6 Modules).
@@ -77,7 +77,7 @@ graph TD
 
 ---
 
-## 📂 Estructura del Repositorio
+## Estructura del Repositorio
 
 ```
 SOA-Avance/
@@ -85,12 +85,11 @@ SOA-Avance/
 ├── agenda-service/        # Microservicio de Agenda y Calendarios
 ├── asistencia-service/    # Microservicio de Asistencia y Notificaciones por Correo
 ├── frontend/              # SPA Cliente (Vite + Vanilla JS/CSS)
-└── docs/                  # Manuales y documentación técnica del proyecto
 ```
 
 ---
 
-## 🔧 Configuración y Ejecución Local
+## Configuración y Ejecución Local
 
 ### Prerrequisitos
 * Java JDK 17 o superior.
@@ -134,7 +133,7 @@ $env:JWT_SECRET="ClaveSecretaSuperSeguraParaFirmarLosTokensJWT12345!"
 
 ---
 
-## ☁️ Despliegue en Producción (Render)
+## Despliegue en Producción (Render)
 
 ### Frontend (Static Site)
 * **Build Command**: `npm run build`
@@ -149,6 +148,4 @@ Configurar los Web Services en Render inyectando las siguientes variables de ent
 * `MAIL_USERNAME` / `MAIL_PASSWORD`: Credenciales de cuenta SMTP emisora (ej. Google App Password).
 * `PORT`: Render asignará dinámicamente el puerto.
 
----
 
-*Desarrollado y optimizado bajo principios de arquitectura orientada a servicios (SOA) y diseño web centrado en el usuario.*
