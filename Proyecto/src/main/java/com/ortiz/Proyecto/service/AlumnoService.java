@@ -21,19 +21,18 @@ public class AlumnoService {
     @Autowired
     private VisitanteRepository visitanteRepository;
 
-    /** Lista todos los alumnos */
+    // Lista todos los alumnos
     public List<Alumno> listar() {
         return alumnoRepository.findAll();
     }
 
-    /** Obtiene un alumno por ID */
+    // Obtiene un alumno por ID
     public Optional<Alumno> obtener(Long id) {
         return alumnoRepository.findById(id);
     }
 
-    /**
-     * Registra un nuevo alumno y lo vincula con su apoderado si se proporciona ID.
-     */
+    //Registra un nuevo alumno y lo vincula con su apoderado si se proporciona ID.
+
     public Alumno registrar(DatosRegistroAlumno datos) {
         Alumno alumno = new Alumno(datos.nombre(), datos.grado(), datos.seccion());
 
@@ -49,14 +48,13 @@ public class AlumnoService {
         return alumnoRepository.save(alumno);
     }
 
-    /** Lista los alumnos de un apoderado específico */
+    // Lista los alumnos de un apoderado específico
     public List<Alumno> listarPorApoderado(Long visitanteId) {
         return alumnoRepository.findByApoderadoId(visitanteId);
     }
 
-    /**
-     * Actualiza los datos de un alumno existente por ID.
-     */
+    //Actualiza los datos de un alumno existente por ID.
+
     public Alumno actualizar(Long id, DatosRegistroAlumno datos) {
         Alumno alumno = alumnoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Alumno no encontrado con id: " + id));

@@ -16,7 +16,6 @@ import java.util.List;
 
 /*
   Filtro JWT para el microservicio de asistencia.
-
   Extrae el token Bearer del header Authorization, lo valida con el mismo
   secret del MVC principal y carga la autenticación en el SecurityContext
   para que Spring Security autorice la solicitud.

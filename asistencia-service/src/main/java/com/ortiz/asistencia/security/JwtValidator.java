@@ -9,7 +9,6 @@ import java.security.Key;
 
 /*
   Validador de JWT para el microservicio de asistencia.
-
   Usa el mismo secret que el MVC principal (SchoolGuard) para verificar
   que el token fue emitido por él. NO genera nuevos tokens — solo los valida.
  */

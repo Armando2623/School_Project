@@ -18,7 +18,6 @@ import java.util.Optional;
 
 /**
  * Servicio de lógica de negocio para la agenda de profesores.
- *
  * Gestiona la creación, actualización, consulta y eliminación
  * de eventos en la agenda de cada profesor.
  */

@@ -9,7 +9,6 @@ import java.security.Key;
 
 /**
  * Validador de JWT para el microservicio de agenda.
- *
  * Usa el mismo secret que el MVC principal (SchoolGuard) y que asistencia-service
  * para verificar que el token fue emitido por el sistema central.
  * NO genera nuevos tokens — solo valida los existentes.
